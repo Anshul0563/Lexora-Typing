@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { BarChart3, ChevronLeft, LayoutDashboard, LogOut, Menu, Moon, Search, Settings, Sun, UserRound, X, Keyboard, TrendingUp } from 'lucide-react';
 import { Brand } from '../components/Brand.jsx';
+import { Footer } from '../components/Footer.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
 const studentLinks = [
@@ -33,6 +34,7 @@ export function AppLayout() {
     <div className="student-workspace">
       <header className="student-topbar"><button className="mobile-menu" onClick={() => setMenuOpen(true)} aria-label="Open navigation"><Menu /></button>{location.pathname === '/dashboard' && <label className="dashboard-search"><Search size={18} /><input aria-label="Search exams" placeholder="Search exams…" /></label>}<div className="student-top-actions"><button onClick={() => setDark((value) => !value)} aria-label={`Switch to ${dark ? 'light' : 'dark'} theme`}>{dark ? <Sun /> : <Moon />}</button><div className="student-user"><span className="user-avatar">{user.name.slice(0, 1).toUpperCase()}</span><div><strong>{user.name}</strong><small>SSC Aspirant</small></div></div></div></header>
       <main className="student-main"><Outlet /></main>
+      <Footer variant="workspace" />
     </div>
   </div>;
 }

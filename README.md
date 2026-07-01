@@ -60,10 +60,10 @@ JWT_EXPIRES_IN=7d
 CLIENT_URL=https://your-vercel-app.vercel.app
 ```
 
-For Vercel preview deployments, `CLIENT_URL` also supports comma-separated origins and simple wildcards, for example:
+To allow another exact deployment origin, provide a comma-separated list:
 
 ```bash
-CLIENT_URL=https://your-vercel-app.vercel.app,https://*.vercel.app
+CLIENT_URL=https://your-vercel-app.vercel.app,https://your-preview.vercel.app
 ```
 
 Configure SMTP variables on Render if password reset emails should work in production.
@@ -97,7 +97,7 @@ After both services are deployed, update Render's `CLIENT_URL` to the final Verc
 
 All endpoints are prefixed by `/api`.
 
-- `POST /auth/register`, `POST /auth/login`, `GET /auth/me`
+- `POST /auth/register`, `POST /auth/login`, `GET /auth/me`, `GET /auth/profile`
 - `POST /auth/forgot-password`, `POST /auth/reset-password`
 - `PATCH /auth/profile`, `PATCH /auth/change-password`
 - `GET /exams`, `GET /exams/:id/random-paragraph`

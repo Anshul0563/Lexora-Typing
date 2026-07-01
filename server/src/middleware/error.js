@@ -9,7 +9,7 @@ export function errorHandler(error, req, res, _next) {
   let message = error.message || 'Internal server error';
   if (error instanceof mongoose.Error.CastError) { status = 400; message = 'Invalid resource identifier'; }
   if (error.code === 11000) { status = 409; message = 'A record with this value already exists'; }
-  if (error.message === 'Not allowed by CORS') {
+  if (error.message === 'Origin is not allowed by CORS') {
     status = 403;
     message = 'Origin is not allowed';
   }

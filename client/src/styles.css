@@ -198,3 +198,25 @@
 .mode-info { background:var(--soft);border-radius:12px;padding:16px;margin-top:20px; }
 .mode-info p { margin:0;color:var(--muted);font-size:13px;line-height:1.6; }
 @media (max-width:700px) { .mode-options { grid-template-columns:1fr; } }
+
+/* Shared site footer */
+.site-footer,.home .site-footer { border-top:1px solid var(--line);color:var(--muted);background:#fff;padding:0;text-align:left; }
+.site-footer-inner { max-width:1180px;min-height:116px;margin:auto;padding:25px 28px;display:grid;grid-template-columns:1fr auto;align-items:center;gap:16px 36px; }
+.site-footer-about { display:flex;align-items:center;gap:18px; }
+.site-footer-about .brand { color:var(--ink);font-size:16px; }
+.site-footer-about .brand-mark { width:32px;height:32px;border-radius:8px; }
+.site-footer-about p,.site-footer-copyright { margin:0;font-size:12px; }
+.site-footer nav { display:flex;align-items:center;gap:22px;font-size:13px;font-weight:600;color:var(--ink); }
+.site-footer nav a:hover { color:var(--brand); }
+.site-footer-copyright { grid-column:1/-1;border-top:1px solid var(--line);padding-top:15px; }
+.student-workspace { min-height:100vh;display:flex;flex-direction:column; }
+.student-main { flex:1; }
+.site-footer-workspace { background:var(--student-surface);border-color:var(--student-border);color:var(--student-muted); }
+.site-footer-workspace .site-footer-inner { width:100%;max-width:1500px;min-height:68px;display:flex;justify-content:space-between;padding-block:16px; }
+.site-footer-workspace .site-footer-copyright { border:0;padding:0; }
+@media (max-width:620px) {
+  .site-footer-inner { min-height:0;grid-template-columns:1fr;padding:24px 16px;gap:20px; }
+  .site-footer-about { align-items:flex-start;flex-direction:column;gap:12px; }
+  .site-footer-copyright { grid-column:1; }
+  .site-footer-workspace .site-footer-inner { align-items:flex-start;flex-direction:column;gap:6px; }
+}

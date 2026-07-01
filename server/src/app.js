@@ -5,6 +5,7 @@ import compression from 'compression';
 import morgan from 'morgan';
 import { rateLimit } from 'express-rate-limit';
 import { env } from './config/env.js';
+import { corsOptions } from './config/cors.js';
 import { getDatabaseStatus } from './config/db.js';
 import { authRouter } from './routes/authRoutes.js';
 import { examRouter } from './routes/examRoutes.js';
@@ -16,24 +17,8 @@ import { errorHandler, notFound } from './middleware/error.js';
 
 export const app = express();
 app.set('trust proxy', 1);
+app.use(cors(corsOptions));
 app.use(helmet());
-const allowedOrigins = env.clientUrl.split(',').map((item) => item.trim());
-if (env.nodeEnv !== 'production') allowedOrigins.push('http://localhost:5173', 'http://127.0.0.1:5173');
-const uniqueAllowedOrigins = [...new Set(allowedOrigins.filter(Boolean))];
-const isAllowedOrigin = (origin) => uniqueAllowedOrigins.some((allowedOrigin) => {
-  if (allowedOrigin === '*') return env.nodeEnv !== 'production';
-  if (allowedOrigin === origin) return true;
-  if (!allowedOrigin.includes('*')) return false;
-  const pattern = new RegExp(`^${allowedOrigin.split('*').map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*')}$`);
-  return pattern.test(origin);
-});
-app.use(cors({
-  origin(origin, callback) {
-    if (!origin || isAllowedOrigin(origin)) return callback(null, true);
-    return callback(new Error('Not allowed by CORS'));
-  },
-  credentials: false
-}));
 app.use(compression());
 app.use(express.json({ limit: '100kb' }));
 if (env.nodeEnv !== 'test') app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev'));

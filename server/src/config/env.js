@@ -21,3 +21,13 @@ if (env.nodeEnv === 'production' && env.jwtSecret.length < 32) {
 if (env.nodeEnv === 'production' && /127\.0\.0\.1|localhost/.test(env.mongoUri)) {
   throw new Error('MONGODB_URI must point to a production database');
 }
+
+if (env.nodeEnv === 'production') {
+  const clientOrigins = env.clientUrl.split(',').map((origin) => origin.trim()).filter(Boolean);
+  if (!clientOrigins.length || clientOrigins.some((origin) => !origin.startsWith('https://'))) {
+    throw new Error('CLIENT_URL must contain the HTTPS origin of the production frontend');
+  }
+  if (clientOrigins.some((origin) => origin.includes('*'))) {
+    throw new Error('CLIENT_URL must use exact origins; wildcards are not allowed in production');
+  }
+}

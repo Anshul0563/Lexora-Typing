@@ -10,5 +10,6 @@ authRouter.post('/login', validate(loginSchema), auth.login);
 authRouter.post('/forgot-password', validate(forgotSchema), auth.forgotPassword);
 authRouter.post('/reset-password', validate(resetSchema), auth.resetPassword);
 authRouter.get('/me', authenticate, auth.me);
+authRouter.get('/profile', authenticate, auth.me);
 authRouter.patch('/profile', authenticate, validate(profileSchema), auth.updateProfile);
 authRouter.patch('/change-password', authenticate, validate(changePasswordSchema), auth.changePassword);
