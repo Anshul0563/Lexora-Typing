@@ -49,6 +49,6 @@ export const startTest = asyncHandler(async (req, res) => {
   const startedAt = Date.now();
   const durationSeconds = exam.durationMinutes * 60;
   const endsAt = startedAt + durationSeconds * 1000;
-  const testToken = signTestToken({ userId: req.user._id, examId: exam._id, paragraphId: paragraph._id, startedAt, endsAt, durationSeconds });
+  const testToken = signTestToken({ userId: req.user._id, examId: exam._id, paragraphId: paragraph._id, testMode: req.body.testMode, startedAt, endsAt, durationSeconds });
   res.status(201).json({ success: true, testToken, startedAt, endsAt });
 });

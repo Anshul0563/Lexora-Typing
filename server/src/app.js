@@ -13,6 +13,7 @@ import { paragraphRouter } from './routes/paragraphRoutes.js';
 import { resultRouter } from './routes/resultRoutes.js';
 import { adminRouter } from './routes/adminRoutes.js';
 import analyticsRouter from './routes/analyticsRoutes.js';
+import { settingsRouter } from './routes/settingsRoutes.js';
 import { errorHandler, notFound } from './middleware/error.js';
 
 export const app = express();
@@ -54,5 +55,6 @@ app.use('/api/paragraphs', paragraphRouter);
 app.use('/api/results', resultRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/analytics', analyticsRouter);
+app.use('/api/settings', settingsRouter);
 app.use(notFound);
 app.use(errorHandler);

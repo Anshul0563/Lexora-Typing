@@ -10,8 +10,8 @@ export const signToken = (user) => jwt.sign(
 
 export const verifyToken = (token) => jwt.verify(token, env.jwtSecret);
 
-export const signTestToken = ({ userId, examId, paragraphId, startedAt, endsAt, durationSeconds }) => jwt.sign(
-  { type: 'typing-test', sub: userId.toString(), examId: examId.toString(), paragraphId: paragraphId.toString(), startedAt, endsAt },
+export const signTestToken = ({ userId, examId, paragraphId, testMode = 'Standard', startedAt, endsAt, durationSeconds }) => jwt.sign(
+  { type: 'typing-test', sub: userId.toString(), examId: examId.toString(), paragraphId: paragraphId.toString(), testMode, startedAt, endsAt },
   env.jwtSecret,
   { expiresIn: durationSeconds + 300, jwtid: crypto.randomUUID() }
 );
