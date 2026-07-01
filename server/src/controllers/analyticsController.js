@@ -1,18 +1,30 @@
 import mongoose from 'mongoose';
 import { Result } from '../models/Result.js';
-import { Exam } from '../models/Exam.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { AppError } from '../utils/AppError.js';
 
+const toObjectId = (id, label = 'id') => {
+  if (!mongoose.Types.ObjectId.isValid(id)) throw new AppError(`Invalid ${label}`, 400);
+  return new mongoose.Types.ObjectId(id);
+};
+
+const assertCanReadUserAnalytics = (req, userId) => {
+  if (req.user.role !== 'admin' && req.user._id.toString() !== userId) {
+    throw new AppError('Access denied', 403);
+  }
+  return toObjectId(userId, 'user id');
+};
+
 export const getUserAnalytics = asyncHandler(async (req, res) => {
   const { userId } = req.params;
-  const timeRange = req.query.timeRange || 'all'; // all, week, month
+  const userObjectId = assertCanReadUserAnalytics(req, userId);
+  const timeRange = req.query.timeRange || 'all';
 
   const getDateFilter = () => {
     const now = new Date();
     if (timeRange === 'week') return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     if (timeRange === 'month') return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    return new Date(0); // all time
+    return new Date(0);
   };
 
   const dateFilter = getDateFilter();
@@ -20,47 +32,58 @@ export const getUserAnalytics = asyncHandler(async (req, res) => {
   const stats = await Result.aggregate([
     {
       $match: {
-        user: mongoose.Types.ObjectId(userId),
+        user: userObjectId,
         createdAt: { $gte: dateFilter }
       }
     },
     {
-      $group: {
-        _id: null,
-        totalTests: { $sum: 1 },
-        avgWpm: { $avg: '$netWpm' },
-        avgAccuracy: { $avg: '$accuracy' },
-        maxWpm: { $max: '$netWpm' },
-        minWpm: { $min: '$netWpm' },
-        totalErrors: { $sum: '$totalErrors' }
+      $facet: {
+        summary: [
+          {
+            $group: {
+              _id: null,
+              totalTests: { $sum: 1 },
+              avgWpm: { $avg: '$netWpm' },
+              avgAccuracy: { $avg: '$accuracy' },
+              maxWpm: { $max: '$netWpm' },
+              minWpm: { $min: '$netWpm' },
+              totalErrors: { $sum: '$totalErrors' }
+            }
+          }
+        ]
       }
-    }
+    },
+    { $project: { summary: { $arrayElemAt: ['$summary', 0] } } }
   ]);
+
+  const result = stats[0]?.summary || {
+    totalTests: 0,
+    avgWpm: 0,
+    avgAccuracy: 0,
+    maxWpm: 0,
+    minWpm: 0,
+    totalErrors: 0
+  };
 
   res.json({
     success: true,
-    data: stats[0] || {
-      totalTests: 0,
-      avgWpm: 0,
-      avgAccuracy: 0,
-      maxWpm: 0,
-      minWpm: 0,
-      totalErrors: 0
-    }
+    data: result
   });
 });
 
 export const getPerformanceTrend = asyncHandler(async (req, res) => {
   const { userId } = req.params;
+  const userObjectId = assertCanReadUserAnalytics(req, userId);
   const { days = 30 } = req.query;
+  const daysLimit = Math.min(parseInt(days), 365);
 
   const fromDate = new Date();
-  fromDate.setDate(fromDate.getDate() - parseInt(days));
+  fromDate.setDate(fromDate.getDate() - daysLimit);
 
   const trend = await Result.aggregate([
     {
       $match: {
-        user: mongoose.Types.ObjectId(userId),
+        user: userObjectId,
         createdAt: { $gte: fromDate }
       }
     },
@@ -75,22 +98,24 @@ export const getPerformanceTrend = asyncHandler(async (req, res) => {
       }
     },
     { $sort: { _id: 1 } },
-    { $limit: parseInt(days) }
+    { $limit: daysLimit }
   ]);
 
   res.json({
     success: true,
-    data: trend
+    data: trend,
+    metadata: { daysRequested: parseInt(days), daysLimited: daysLimit, resultsCount: trend.length }
   });
 });
 
 export const getExamWiseStats = asyncHandler(async (req, res) => {
   const { userId } = req.params;
+  const userObjectId = assertCanReadUserAnalytics(req, userId);
 
   const stats = await Result.aggregate([
     {
       $match: {
-        user: mongoose.Types.ObjectId(userId)
+        user: userObjectId
       }
     },
     {
@@ -135,11 +160,12 @@ export const getExamWiseStats = asyncHandler(async (req, res) => {
 
 export const getTestModeComparison = asyncHandler(async (req, res) => {
   const { userId } = req.params;
+  const userObjectId = assertCanReadUserAnalytics(req, userId);
 
   const comparison = await Result.aggregate([
     {
       $match: {
-        user: mongoose.Types.ObjectId(userId)
+        user: userObjectId
       }
     },
     {
@@ -171,13 +197,14 @@ export const getTestModeComparison = asyncHandler(async (req, res) => {
 
 export const getWeeklyPattern = asyncHandler(async (req, res) => {
   const { userId } = req.params;
+  const userObjectId = assertCanReadUserAnalytics(req, userId);
 
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   const pattern = await Result.aggregate([
     {
       $match: {
-        user: mongoose.Types.ObjectId(userId)
+        user: userObjectId
       }
     },
     {
@@ -208,11 +235,12 @@ export const getWeeklyPattern = asyncHandler(async (req, res) => {
 
 export const getHourlyPattern = asyncHandler(async (req, res) => {
   const { userId } = req.params;
+  const userObjectId = assertCanReadUserAnalytics(req, userId);
 
   const pattern = await Result.aggregate([
     {
       $match: {
-        user: mongoose.Types.ObjectId(userId)
+        user: userObjectId
       }
     },
     {
@@ -243,13 +271,14 @@ export const getHourlyPattern = asyncHandler(async (req, res) => {
 
 export const getProgressReport = asyncHandler(async (req, res) => {
   const { userId } = req.params;
+  const userObjectId = assertCanReadUserAnalytics(req, userId);
   const { days = 30 } = req.query;
 
   const fromDate = new Date();
   fromDate.setDate(fromDate.getDate() - parseInt(days));
 
   const allResults = await Result.find({
-    user: mongoose.Types.ObjectId(userId),
+    user: userObjectId,
     createdAt: { $gte: fromDate }
   }).sort({ createdAt: 1 });
 
@@ -289,7 +318,10 @@ export const getProgressReport = asyncHandler(async (req, res) => {
 
 export const getDetailedReport = asyncHandler(async (req, res) => {
   const { userId } = req.params;
-  const { examId, timeRange = 'all' } = req.query;
+  const userObjectId = assertCanReadUserAnalytics(req, userId);
+  const { examId, timeRange = 'all', page = 1, limit = 50 } = req.query;
+  const pageNum = Math.max(1, parseInt(page));
+  const pageSize = Math.min(parseInt(limit), 100);
 
   const getDateFilter = () => {
     const now = new Date();
@@ -299,41 +331,73 @@ export const getDetailedReport = asyncHandler(async (req, res) => {
   };
 
   const query = {
-    user: mongoose.Types.ObjectId(userId),
+    user: userObjectId,
     createdAt: { $gte: getDateFilter() }
   };
 
   if (examId) {
-    query.exam = mongoose.Types.ObjectId(examId);
+    query.exam = toObjectId(examId, 'exam id');
   }
 
-  const results = await Result.find(query)
-    .populate('exam', 'name organization')
-    .sort({ createdAt: -1 })
-    .limit(50);
+  const [results, totalCount, stats] = await Promise.all([
+    Result.find(query)
+      .populate('exam', 'name organization')
+      .sort({ createdAt: -1 })
+      .skip((pageNum - 1) * pageSize)
+      .limit(pageSize)
+      .lean(),
+    Result.countDocuments(query),
+    Result.aggregate([
+      { $match: query },
+      {
+        $group: {
+          _id: null,
+          totalAttempts: { $sum: 1 },
+          avgWpm: { $avg: '$netWpm' },
+          avgAccuracy: { $avg: '$accuracy' },
+          bestWpm: { $max: '$netWpm' },
+          worstWpm: { $min: '$netWpm' },
+          totalErrors: { $sum: '$totalErrors' }
+        }
+      }
+    ])
+  ]);
 
-  const stats = {
-    totalAttempts: results.length,
-    avgWpm: (results.reduce((sum, r) => sum + r.netWpm, 0) / results.length).toFixed(2),
-    avgAccuracy: (results.reduce((sum, r) => sum + r.accuracy, 0) / results.length).toFixed(2),
-    bestWpm: Math.max(...results.map(r => r.netWpm)),
-    worstWpm: Math.min(...results.map(r => r.netWpm)),
-    totalErrors: results.reduce((sum, r) => sum + r.totalErrors, 0)
+  const statsObj = stats[0] || {
+    totalAttempts: 0,
+    avgWpm: 0,
+    avgAccuracy: 0,
+    bestWpm: 0,
+    worstWpm: 0,
+    totalErrors: 0
   };
 
   res.json({
     success: true,
     data: {
-      stats,
+      stats: {
+        totalAttempts: statsObj.totalAttempts,
+        avgWpm: Math.round(statsObj.avgWpm * 100) / 100,
+        avgAccuracy: Math.round(statsObj.avgAccuracy * 100) / 100,
+        bestWpm: statsObj.bestWpm,
+        worstWpm: statsObj.worstWpm,
+        totalErrors: statsObj.totalErrors
+      },
       results: results.map(r => ({
         date: r.createdAt,
-        exam: r.exam.name,
+        exam: r.exam?.name || 'Unknown',
         wpm: r.netWpm,
         accuracy: r.accuracy,
         errors: r.totalErrors,
         testMode: r.testMode,
         timeTaken: r.timeTaken
-      }))
+      })),
+      pagination: {
+        page: pageNum,
+        limit: pageSize,
+        total: totalCount,
+        pages: Math.ceil(totalCount / pageSize)
+      }
     }
   });
 });

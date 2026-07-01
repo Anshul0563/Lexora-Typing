@@ -18,7 +18,20 @@ app.set('trust proxy', 1);
 app.use(helmet());
 const allowedOrigins = env.clientUrl.split(',').map((item) => item.trim());
 if (env.nodeEnv !== 'production') allowedOrigins.push('http://localhost:5173', 'http://127.0.0.1:5173');
-app.use(cors({ origin: [...new Set(allowedOrigins)], credentials: false }));
+const uniqueAllowedOrigins = [...new Set(allowedOrigins.filter(Boolean))];
+const isAllowedOrigin = (origin) => uniqueAllowedOrigins.some((allowedOrigin) => {
+  if (allowedOrigin === origin) return true;
+  if (!allowedOrigin.includes('*')) return false;
+  const pattern = new RegExp(`^${allowedOrigin.split('*').map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*')}$`);
+  return pattern.test(origin);
+});
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || isAllowedOrigin(origin)) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: false
+}));
 app.use(compression());
 app.use(express.json({ limit: '100kb' }));
 if (env.nodeEnv !== 'test') app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev'));

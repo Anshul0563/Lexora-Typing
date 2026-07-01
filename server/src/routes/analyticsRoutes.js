@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticate } from '../middleware/auth.js';
 import {
   getUserAnalytics,
   getPerformanceTrend,
@@ -14,7 +14,7 @@ import {
 const router = express.Router();
 
 // All analytics routes require authentication
-router.use(authenticateToken);
+router.use(authenticate);
 
 // Get overall user statistics
 router.get('/summary/:userId', getUserAnalytics);

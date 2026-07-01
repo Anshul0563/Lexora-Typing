@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api.js';
 import { Loader } from '../components/Loader.jsx';
@@ -90,6 +90,13 @@ export default function AnalyticsDashboard() {
     element.download = `analytics-${new Date().toISOString().split('T')[0]}.json`;
     element.click();
   };
+
+  // Optimize trend data for charting (limit to 50 data points for performance)
+  const optimizedTrend = useMemo(() => {
+    if (trend.length <= 50) return trend;
+    const step = Math.ceil(trend.length / 50);
+    return trend.filter((_, i) => i % step === 0);
+  }, [trend]);
 
   if (loading) return <Loader label="Analyzing your performance…" />;
 
@@ -208,7 +215,7 @@ export default function AnalyticsDashboard() {
             </select>
           </div>
           <ResponsiveContainer width="100%" height={400}>
-            <LineChart data={trend}>
+            <LineChart data={optimizedTrend}>
               <CartesianGrid strokeDasharray="3 3" stroke="#333" />
               <XAxis dataKey="_id" stroke="#999" />
               <YAxis yAxisId="left" stroke="#6366f1" />

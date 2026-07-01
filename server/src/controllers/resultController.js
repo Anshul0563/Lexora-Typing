@@ -21,7 +21,7 @@ export const submitResult = asyncHandler(async (req, res) => {
   const referenceLength = Array.from(paragraph.content.normalize('NFC')).length;
   if (typedLength > referenceLength + 1000) throw new AppError('Typed text exceeds the permitted test length', 400);
   const metrics = calculateResult(paragraph.content, req.body.typedText, elapsedSeconds, req.body, exam.scoringRule);
-  const result = await Result.create({ testSessionId: session.jti, user: req.user._id, exam: exam._id, paragraph: paragraph._id, typedText: req.body.typedText, ...metrics });
+  const result = await Result.create({ testSessionId: session.jti, user: req.user._id, exam: exam._id, paragraph: paragraph._id, typedText: req.body.typedText, testMode: req.body.testMode || 'Standard', ...metrics });
   res.status(201).json({ success: true, result: { ...result.toObject(), exam: { _id: exam._id, name: exam.name } } });
 });
 export const getResult = asyncHandler(async (req, res) => {

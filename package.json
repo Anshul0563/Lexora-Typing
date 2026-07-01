@@ -1,6 +1,9 @@
 {
   "name": "typepath-ssc",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
     "install:all": "npm install --prefix server && npm install --prefix client",

@@ -39,6 +39,51 @@ npm test             # backend unit tests
 npm run seed --prefix server
 ```
 
+## Deploying to Render + Vercel
+
+### Backend on Render
+
+Deploy the `server` package as a Node web service. A Render Blueprint is included in `render.yaml`.
+
+- Root directory: `server`
+- Build command: `npm ci`
+- Start command: `npm start`
+- Health check path: `/api/health`
+
+Set these Render environment variables:
+
+```bash
+NODE_ENV=production
+MONGODB_URI=<your MongoDB Atlas connection string>
+JWT_SECRET=<random 32+ character secret>
+JWT_EXPIRES_IN=7d
+CLIENT_URL=https://your-vercel-app.vercel.app
+```
+
+For Vercel preview deployments, `CLIENT_URL` also supports comma-separated origins and simple wildcards, for example:
+
+```bash
+CLIENT_URL=https://your-vercel-app.vercel.app,https://*.vercel.app
+```
+
+Configure SMTP variables on Render if password reset emails should work in production.
+
+### Frontend on Vercel
+
+Deploy the `client` folder as the Vercel project.
+
+- Framework preset: Vite
+- Build command: `npm run build`
+- Output directory: `dist`
+
+Set this Vercel environment variable:
+
+```bash
+VITE_API_URL=https://your-render-service.onrender.com/api
+```
+
+After both services are deployed, update Render's `CLIENT_URL` to the final Vercel domain and redeploy the backend.
+
 ## Production checklist
 
 - Set a random `JWT_SECRET` of at least 32 characters.
