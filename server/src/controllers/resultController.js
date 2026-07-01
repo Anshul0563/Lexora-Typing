@@ -29,7 +29,8 @@ export const submitResult = asyncHandler(async (req, res) => {
   const typedLength = Array.from(req.body.typedText.normalize('NFC')).length;
   const referenceLength = Array.from(paragraph.content.normalize('NFC')).length;
   if (typedLength > referenceLength + 1000) throw new AppError('Typed text exceeds the permitted test length', 400);
-  const metrics = calculateResult(paragraph.content, req.body.typedText, elapsedSeconds, req.body, scoringRuleForMode(exam, req.body.testMode));
+  const isSscStenographer = /^SSC Stenographer\s*(?:\((?:English|Hindi)\)|(?:English|Hindi))$/i.test(exam.name.trim());
+  const metrics = calculateResult(paragraph.content, req.body.typedText, elapsedSeconds, req.body, { ...scoringRuleForMode(exam, req.body.testMode), evaluationMode: isSscStenographer ? 'ssc-stenographer' : 'practice' });
   const result = await Result.create({ testSessionId: session.jti, user: req.user._id, exam: exam._id, paragraph: paragraph._id, typedText: req.body.typedText, testMode: req.body.testMode, ...metrics });
   res.status(201).json({ success: true, result: { ...result.toObject(), exam: { _id: exam._id, name: exam.name }, paragraph: { _id: paragraph._id, title: paragraph.title, content: paragraph.content } } });
 });

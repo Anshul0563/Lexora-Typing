@@ -40,6 +40,82 @@ export function alignCharacters(source, typed) {
   return { ...alignment, referenceCharacters: target.length, typedCharacters: input.length };
 }
 
+const isWhitespace = (value) => /\s/u.test(value);
+const isLineBreak = (value) => value === '\n' || value === '\r';
+const isPunctuation = (value) => /[\p{P}\p{S}]/u.test(value);
+const isLetter = (value) => /\p{L}/u.test(value);
+
+/**
+ * Builds the canonical, character-level edit script used for both scoring and UI.
+ * Costs are computed with rolling rows; only one byte per cell is retained for
+ * backtracking, keeping normal exam passages comfortably bounded in memory.
+ */
+export function classifyErrors(sourceValue, typedValue, allErrorsAreFull = false) {
+  const source = segmentCharacters(sourceValue.replace(/\r\n?/g, '\n'));
+  const typed = segmentCharacters(typedValue.replace(/\r\n?/g, '\n'));
+  const width = typed.length + 1;
+  const directions = new Uint8Array((source.length + 1) * width);
+  let previous = Uint32Array.from({ length: width }, (_, index) => index);
+  for (let j = 1; j <= typed.length; j += 1) directions[j] = 3;
+  for (let i = 1; i <= source.length; i += 1) {
+    const current = new Uint32Array(width); current[0] = i; directions[i * width] = 2;
+    for (let j = 1; j <= typed.length; j += 1) {
+      const index = i * width + j;
+      if (source[i - 1] === typed[j - 1]) { current[j] = previous[j - 1]; directions[index] = 1; continue; }
+      const substitute = previous[j - 1] + 1; const omit = previous[j] + 1; const add = current[j - 1] + 1;
+      if (substitute <= omit && substitute <= add) { current[j] = substitute; directions[index] = 4; }
+      else if (omit <= add) { current[j] = omit; directions[index] = 2; }
+      else { current[j] = add; directions[index] = 3; }
+    }
+    previous = current;
+  }
+  const operations = []; let i = source.length; let j = typed.length;
+  while (i || j) {
+    const move = directions[i * width + j];
+    if (move === 1) { operations.push({ source: source[--i], typed: typed[--j], equal: true }); }
+    else if (move === 4) { operations.push({ source: source[--i], typed: typed[--j] }); }
+    else if (move === 2 || j === 0) { operations.push({ source: source[--i], typed: '' }); }
+    else { operations.push({ source: '', typed: typed[--j] }); }
+  }
+  operations.reverse();
+
+  const counts = { omission: 0, addition: 0, spelling: 0, substitution: 0, repetition: 0, incompleteWord: 0, spacing: 0, capitalization: 0, punctuation: 0, transposition: 0, paragraphic: 0 };
+  const classified = [];
+  for (let cursor = 0; cursor < operations.length;) {
+    if (operations[cursor].equal) { classified.push({ ...operations[cursor], severity: 'correct', category: 'correct' }); cursor += 1; continue; }
+    let end = cursor + 1;
+    while (end < operations.length && !operations[end].equal) end += 1;
+    const run = operations.slice(cursor, end);
+    const left = operations[cursor - 1]; const right = operations[end];
+    const sourceText = run.map((item) => item.source).join(''); const typedText = run.map((item) => item.typed).join('');
+    let category;
+    if ([...sourceText, ...typedText].some(isLineBreak)) category = 'paragraphic';
+    else if ([...sourceText, ...typedText].every(isWhitespace)) category = 'spacing';
+    else if (sourceText && typedText && sourceText.localeCompare(typedText, undefined, { sensitivity: 'accent' }) === 0) category = 'capitalization';
+    else if ([...sourceText, ...typedText].every((char) => isPunctuation(char))) category = 'punctuation';
+    else if (sourceText.length === 2 && typedText === [...sourceText].reverse().join('')) category = 'transposition';
+    else if (!typedText) category = sourceText && left && !isWhitespace(left.source) && (!right || !isWhitespace(right.source)) ? 'incompleteWord' : 'omission';
+    else if (!sourceText) category = typedText === left?.typed || typedText === right?.typed ? 'repetition' : 'addition';
+    else if ([...sourceText, ...typedText].every((char) => isLetter(char))) category = 'spelling';
+    else category = 'substitution';
+    counts[category] += 1;
+    const halfCategory = ['spacing', 'capitalization', 'punctuation', 'transposition', 'paragraphic'].includes(category);
+    const severity = !allErrorsAreFull && halfCategory ? 'half' : 'full';
+    for (const item of run) classified.push({ ...item, severity, category });
+    cursor = end;
+  }
+  const merge = (side) => classified.reduce((parts, item) => {
+    const text = item[side]; if (!text) return parts;
+    const previousPart = parts.at(-1);
+    if (previousPart?.severity === item.severity && previousPart?.category === item.category) previousPart.text += text;
+    else parts.push({ text, severity: item.severity, category: item.category });
+    return parts;
+  }, []);
+  const halfErrors = allErrorsAreFull ? 0 : counts.spacing + counts.capitalization + counts.punctuation + counts.transposition + counts.paragraphic;
+  const classifiedTotal = Object.values(counts).reduce((sum, value) => sum + value, 0);
+  return { counts, fullErrors: classifiedTotal - halfErrors, halfErrors, weightedErrors: classifiedTotal - halfErrors * 0.5, referenceParts: merge('source'), typedParts: merge('typed') };
+}
+
 function alignWithinBand(target, input, band) {
   const width = input.length + 1;
   const unreachable = 0x3fffffff;
@@ -118,13 +194,13 @@ export function calculateResult(source, typed, elapsedSeconds, telemetry = {}, s
   const safeSeconds = Math.max(1, Number(elapsedSeconds) || 1);
   const minutes = safeSeconds / 60;
   const grossWpm = (alignment.typedCharacters / 5) / minutes;
+  const evaluationMode = scoringRule.evaluationMode === 'ssc-stenographer' ? 'ssc-stenographer' : 'practice';
+  const errors = classifyErrors(source, typed, evaluationMode === 'ssc-stenographer');
   const scoringMode = scoringRule.mode === 'character' ? 'character' : 'standard-word';
   const errorPenalty = Math.min(10, Math.max(0.1, Number(scoringRule.errorPenalty) || 1));
-  const baseErrorUnits = scoringMode === 'character' ? alignment.totalErrors / 5 : wordAlignment.totalWordErrors;
-  const errorUnits = baseErrorUnits * errorPenalty;
+  const errorUnits = errors.weightedErrors * errorPenalty;
   const netWpm = Math.min(grossWpm, Math.max(0, grossWpm - errorUnits / minutes));
-  const accuracyUnits = alignment.correctCharacters + alignment.totalErrors;
-  const accuracy = accuracyUnits ? (alignment.correctCharacters / accuracyUnits) * 100 : 0;
+  const accuracy = alignment.referenceCharacters ? Math.max(0, (alignment.referenceCharacters - errors.weightedErrors) / alignment.referenceCharacters * 100) : (alignment.typedCharacters ? 0 : 100);
   const round = (value) => Math.round(value * 100) / 100;
   const backspaceCount = Math.max(0, Math.floor(Number(telemetry.backspaceCount) || 0));
   const totalKeystrokes = Math.max(0, Math.floor(Number(telemetry.totalKeystrokes) || 0));
@@ -133,7 +209,9 @@ export function calculateResult(source, typed, elapsedSeconds, telemetry = {}, s
     grossWpm: round(grossWpm), netWpm: round(netWpm), accuracy: round(accuracy),
     ...alignment,
     ...wordAlignment,
-    errorUnits: round(errorUnits), scoringMode, errorPenalty,
+    errorUnits: round(errorUnits), scoringMode, errorPenalty, evaluationMode,
+    fullErrors: errors.fullErrors, halfErrors: errors.halfErrors, weightedErrors: errors.weightedErrors,
+    errorBreakdown: errors.counts, comparison: { referenceParts: errors.referenceParts, typedParts: errors.typedParts },
     totalKeystrokes,
     backspaceCount,
     timeTaken: round(safeSeconds)
