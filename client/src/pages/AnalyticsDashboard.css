@@ -1,4 +1,10 @@
 .analytics-dashboard {
+  --chart-surface: #fff;
+  --chart-grid: #e2e8f0;
+  --chart-axis: #64748b;
+  --chart-tooltip-bg: #fff;
+  --chart-tooltip-border: #d7dce3;
+  --chart-tooltip-text: #18202b;
   padding: 2rem;
   max-width: 1400px;
   margin: 0 auto;
@@ -33,7 +39,7 @@
 
 .filter-select {
   padding: 0.75rem 1rem;
-  background: #fff;
+  background: var(--student-surface, #fff);
   border: 1px solid var(--line, #d7dce3);
   border-radius: 6px;
   color: var(--ink, #111827);
@@ -43,8 +49,8 @@
 }
 
 .filter-select option {
-  background: #fff;
-  color: #111827;
+  background: var(--student-surface, #fff);
+  color: var(--ink, #111827);
 }
 
 .filter-select:hover {
@@ -182,8 +188,8 @@
 
 /* Chart Sections */
 .chart-section {
-  background: var(--bg-secondary, #1a1a1a);
-  border: 1px solid var(--border, #333);
+  background: var(--chart-surface);
+  border: 1px solid var(--line);
   border-radius: 12px;
   padding: 2rem;
   margin-bottom: 2rem;
@@ -244,9 +250,9 @@
   align-items: center;
   gap: 1.5rem;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--student-bg, #f8fafc);
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
   transition: all 0.2s ease;
 }
 
@@ -320,12 +326,12 @@
   color: var(--muted);
   font-size: 0.85rem;
   font-weight: 600;
-  border-bottom: 1px solid var(--border, #333);
+  border-bottom: 1px solid var(--line);
 }
 
 .results-table td {
   padding: 1rem;
-  border-bottom: 1px solid var(--border, #333);
+  border-bottom: 1px solid var(--line);
   color: var(--ink);
   font-size: 0.9rem;
 }
@@ -359,6 +365,19 @@
     transform: translateY(0);
   }
 }
+
+:root[data-theme="dark"] .analytics-dashboard {
+  --chart-surface: #0b0b0b;
+  --chart-grid: #2a2a2a;
+  --chart-axis: #a3a3a3;
+  --chart-tooltip-bg: #111;
+  --chart-tooltip-border: #333;
+  --chart-tooltip-text: #f5f5f5;
+}
+:root[data-theme="dark"] .stat-card,:root[data-theme="dark"] .progress-card { background:#0b0b0b;border-color:#292929; }
+:root[data-theme="dark"] .stat-icon { background:#181818; }
+:root[data-theme="dark"] .results-table tr:hover,:root[data-theme="dark"] .exam-item:hover { background:#151515; }
+:root[data-theme="dark"] .recharts-default-tooltip { background:#111!important;border-color:#333!important;color:#f5f5f5!important; }
 
 /* Responsive */
 @media (max-width: 700px) {

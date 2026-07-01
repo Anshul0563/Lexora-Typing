@@ -3,17 +3,13 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api.js';
 import { Loader } from '../components/Loader.jsx';
 import { Notice } from '../components/Toast.jsx';
-import {
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
-} from 'recharts';
-import {
-  TrendingUp, Zap, Target, Clock, Calendar, AlertCircle,
-  Download, Filter, RefreshCw
-} from 'lucide-react';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { TrendingUp, Zap, Target, Calendar, Download, RefreshCw } from 'lucide-react';
 import './AnalyticsDashboard.css';
 
-const COLORS = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b'];
+const chartGrid = 'var(--chart-grid)';
+const chartAxis = 'var(--chart-axis)';
+const tooltipStyle = { backgroundColor: 'var(--chart-tooltip-bg)', border: '1px solid var(--chart-tooltip-border)', color: 'var(--chart-tooltip-text)', borderRadius: 8 };
 const formatDuration = (seconds) => {
   const total = Math.max(0, Math.round(Number(seconds) || 0));
   return `${Math.floor(total / 60)}m ${String(total % 60).padStart(2, '0')}s`;
@@ -220,12 +216,14 @@ export default function AnalyticsDashboard() {
           </div>
           <ResponsiveContainer width="100%" height={400}>
             <LineChart data={optimizedTrend}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-              <XAxis dataKey="_id" stroke="#999" />
+              <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} />
+              <XAxis dataKey="_id" stroke={chartAxis} />
               <YAxis yAxisId="left" stroke="#6366f1" />
               <YAxis yAxisId="right" orientation="right" stroke="#10b981" />
               <Tooltip
-                contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}
+                contentStyle={tooltipStyle}
+                labelStyle={{ color: 'var(--chart-tooltip-text)' }}
+                itemStyle={{ color: 'var(--chart-tooltip-text)' }}
                 formatter={(value) => value.toFixed(2)}
               />
               <Legend />
@@ -242,10 +240,10 @@ export default function AnalyticsDashboard() {
           <h2>Test Mode Performance</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={modeComparison}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-              <XAxis dataKey="mode" stroke="#999" />
-              <YAxis stroke="#999" />
-              <Tooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} />
+              <XAxis dataKey="mode" stroke={chartAxis} />
+              <YAxis stroke={chartAxis} />
+              <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: 'var(--chart-tooltip-text)' }} itemStyle={{ color: 'var(--chart-tooltip-text)' }} />
               <Legend />
               <Bar dataKey="avgWpm" fill="#6366f1" name="Avg WPM" />
               <Bar dataKey="avgAccuracy" fill="#10b981" name="Accuracy %" />
@@ -260,10 +258,10 @@ export default function AnalyticsDashboard() {
           <h2>Weekly Pattern</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={weeklyPattern}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-              <XAxis dataKey="day" stroke="#999" />
-              <YAxis stroke="#999" />
-              <Tooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} />
+              <XAxis dataKey="day" stroke={chartAxis} />
+              <YAxis stroke={chartAxis} />
+              <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: 'var(--chart-tooltip-text)' }} itemStyle={{ color: 'var(--chart-tooltip-text)' }} />
               <Bar dataKey="testCount" fill="#8b5cf6" name="Tests" />
             </BarChart>
           </ResponsiveContainer>
@@ -276,10 +274,10 @@ export default function AnalyticsDashboard() {
           <h2>Hourly Pattern</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={hourlyPattern}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-              <XAxis dataKey="hour" stroke="#999" />
-              <YAxis stroke="#999" />
-              <Tooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} />
+              <XAxis dataKey="hour" stroke={chartAxis} />
+              <YAxis stroke={chartAxis} />
+              <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: 'var(--chart-tooltip-text)' }} itemStyle={{ color: 'var(--chart-tooltip-text)' }} />
               <Bar dataKey="testCount" fill="#06b6d4" name="Tests" />
             </BarChart>
           </ResponsiveContainer>
