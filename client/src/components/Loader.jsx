@@ -1,1 +1,1 @@
-export function Loader({ label = 'Loading…' }) { return <div className="loader-wrap"><span className="spinner" /><span>{label}</span></div>; }
+export function Loader({ label = 'Loading…' }) { return <div className="loader-wrap" role="status" aria-live="polite" aria-busy="true"><span className="spinner" aria-hidden="true" /><span>{label}</span></div>; }

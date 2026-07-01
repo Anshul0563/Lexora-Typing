@@ -1,118 +1,443 @@
-# SAS Academy
+# SAS Academy Typing Platform
 
-A production-oriented SSC typing practice platform built with React, Express and MongoDB. It provides a focused exam simulation for learners and a no-code administration area for exams, paragraphs, users and site settings.
+A full-stack typing practice and examination platform for competitive-exam preparation. SAS Academy provides server-authoritative scoring, automatic exam-mode selection, character-accurate result analysis, performance analytics, and a complete administration workspace.
 
-## Features
+Built with React, Express, MongoDB, and Node.js.
 
-- JWT authentication with bcrypt password hashing and password-reset tokens
-- User profile and password management
-- Active exam dashboard with randomized passages
-- Exam-style typing screen with a single visible timer
-- Character comparison, active-word and cursor highlighting, paste protection, restart and auto-submit
-- TCS Mode as the primary SSC typing mode for TCS iON-style exams such as SSC CGL, CHSL, Stenographer, MTS and applicable Railway typing tests
-- Server-authoritative WPM, accuracy and error calculations
-- Admin overview, exam CRUD, searchable paragraph CRUD, user access control and website settings
-- Validation, rate limiting, secure HTTP headers, compression and centralized errors
+## Contents
+
+- [Highlights](#highlights)
+- [Exam modes](#exam-modes)
+- [Scoring](#scoring)
+- [Architecture](#architecture)
+- [Technology stack](#technology-stack)
+- [Local development](#local-development)
+- [Environment variables](#environment-variables)
+- [Administrator accounts](#administrator-accounts)
+- [Available scripts](#available-scripts)
+- [API overview](#api-overview)
+- [Deployment](#deployment)
+- [Testing](#testing)
+- [Security](#security)
+- [Troubleshooting](#troubleshooting)
+
+## Highlights
+
+### Learner experience
+
+- English and Hindi typing tests
+- Automatic TCS/NTA mode selection for actual exams
+- Customizable Practice mode with timer, backspace, word highlighting, sound, auto-scroll, font size, and theme controls
+- Server-controlled timer and tamper-resistant test sessions
+- Refresh recovery for active attempts
+- Paste, drop, cut, and unsupported navigation protection
+- Automatic submission when time expires
+- Responsive light and true-black dark themes
+- Results history and performance analytics
+
+### Result analysis
+
+- Gross WPM, Net WPM, accuracy, elapsed time, and keystroke activity
+- Full-error and half-error classification
+- Character-accurate original-versus-typed comparison
+- Red highlighting for full errors and blue highlighting for half errors
+- Unicode normalization for English, Hindi, and mixed-language text
+- Exam-specific formula explanation on every result
+
+### Administration
+
+- Dashboard statistics
+- Exam creation, editing, activation, and deletion
+- Searchable paragraph management with language validation
+- User search and access control
+- Dynamic website name, support email, announcement, and maintenance mode
+- Uploaded or catalogue-based exam logos
+- History-safe deletion rules that protect saved learner results
 
 ## Exam modes
 
-TCS Mode is the default and recommended typing mode for this SSC-focused project. It is intended for exams conducted on the TCS iON platform or similar interfaces, including SSC CGL, SSC CHSL, SSC Stenographer, SSC MTS and applicable Railway recruitment typing tests.
+Mode resolution is performed by the server. A client cannot override the mode for an actual exam.
 
-Standard Mode is available for administrator-configured custom scoring rules.
+| Exam category | Selected mode | User choice |
+| --- | --- | --- |
+| `SSC` | TCS | No |
+| Any non-SSC actual-exam category | NTA | No |
+| `Practice` | TCS, NTA, or Custom | Yes |
 
-NTA Mode is not an SSC typing mode. It is reserved for future NTA-based CBT support for examinations such as JEE Main, NEET UG, CUET UG/PG, UGC NET and NCET, which are generally MCQ-based computer-based tests rather than typing tests.
+This rule is category-based rather than exam-name-based. New SSC exams automatically use TCS mode; new non-SSC exams automatically use NTA mode without additional code changes.
 
-Administrators are stored in the `users` collection with `role: "admin"`. This avoids duplicating credentials and authentication logic in a separate collection while preserving a distinct, role-gated admin experience.
+Examples:
 
-## Local setup
+- `SSC Stenographer (English)` → TCS
+- `SSC CGL DEST` → TCS
+- `DSSSB JSA` → NTA
+- `RRB NTPC` → NTA
+- `Bihar SSC Stenographer` with category `State Exams` → NTA
+- `English Typing Practice` → Practice settings
 
-Requirements: Node.js 20+ and MongoDB 7+.
+Actual exams launch in one server request without a mode-selection screen. Practice preferences are stored locally and never alter actual-exam settings.
+
+## Scoring
+
+All final metrics are calculated on the server from the reference text, final typed text, authoritative elapsed time, and selected exam.
+
+### Error classification
+
+Full errors carry a weight of `1`:
+
+- Omission
+- Addition
+- Spelling
+- Substitution
+- Repetition
+- Incomplete word
+
+Half errors carry a weight of `0.5` in Practice evaluation:
+
+- Spacing
+- Capitalization
+- Punctuation
+- Transposition
+- Paragraphic error
+
+SSC Stenographer English and Hindi promote every detected mistake to a full error.
+
+### Formulas
+
+```text
+Gross WPM = (Typed characters / 5) / Time in minutes
+
+Practice weighted errors = Full errors + (Half errors × 0.5)
+SSC Stenographer weighted errors = Total detected errors
+
+Net WPM = Gross WPM - ((Weighted errors × Penalty) / Time in minutes)
+
+Accuracy = ((Reference characters - Weighted errors) / Reference characters) × 100
+```
+
+Accuracy and Net WPM are clamped to valid ranges. The same classified alignment drives persisted counts, formulas, analytics, and Result-page highlighting.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    Browser[React client] -->|JWT + JSON API| API[Express API]
+    API --> Auth[Authentication and validation]
+    API --> Exams[Exam and paragraph services]
+    API --> Scoring[Scoring and comparison engine]
+    API --> Analytics[Analytics queries]
+    Auth --> Mongo[(MongoDB)]
+    Exams --> Mongo
+    Scoring --> Mongo
+    Analytics --> Mongo
+    Admin[Admin workspace] -->|Role-gated API| API
+```
+
+```text
+.
+├── client/                  React + Vite frontend
+│   ├── public/              Logos and exam assets
+│   └── src/
+│       ├── components/      Shared UI components
+│       ├── context/         Authentication and site settings
+│       ├── layouts/         Student and admin shells
+│       ├── pages/           Public, student, result, analytics, and admin pages
+│       └── services/        API client and request tracking
+├── server/                  Express + MongoDB API
+│   ├── scripts/             Seed and administrator utilities
+│   ├── tests/               Node test suites
+│   └── src/
+│       ├── controllers/     Request handlers
+│       ├── models/          Mongoose schemas
+│       ├── routes/          REST routes
+│       ├── utils/           Scoring, JWT, timing, modes, and startup helpers
+│       └── validators/      Zod request schemas
+├── render.yaml              Render backend blueprint
+└── package.json             Workspace scripts
+```
+
+## Technology stack
+
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 19, React Router, Vite |
+| UI | CSS, Lucide React |
+| Charts | Recharts |
+| Backend | Node.js 22, Express 5 |
+| Database | MongoDB, Mongoose |
+| Validation | Zod |
+| Authentication | JWT, bcrypt |
+| Email | Nodemailer |
+| Security | Helmet, CORS, rate limiting |
+| Deployment | Vercel frontend, Render backend |
+
+## Local development
+
+### Requirements
+
+- Node.js `22.x`
+- npm
+- MongoDB running locally or a MongoDB Atlas connection string
+
+### Installation
 
 ```bash
+git clone https://github.com/Anshul0563/Typing.git
+cd Typing
 npm install
 npm run install:all
+```
+
+Create local environment files:
+
+```bash
 cp server/.env.example server/.env
 cp client/.env.example client/.env
-npm run seed --prefix server
+```
+
+Update at least `MONGODB_URI`, `JWT_SECRET`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` in `server/.env`, then start both applications:
+
+```bash
 npm run dev
 ```
 
-The web app runs at `http://localhost:5173`; the API runs at `http://localhost:5000`. Change the seeded admin credentials in `server/.env` before running the seed command.
+| Service | Local URL |
+| --- | --- |
+| Frontend | `http://localhost:5173` |
+| API | `http://localhost:5000` |
+| Health check | `http://localhost:5000/health` |
 
-## Scripts
+The default catalogue is created idempotently during server startup. Existing admin-edited exams are not overwritten.
 
-```bash
-npm run dev          # frontend and API together
-npm run build        # production frontend bundle
-npm test             # backend unit tests
-npm run seed --prefix server
+## Environment variables
+
+### Server
+
+| Variable | Required in production | Description |
+| --- | --- | --- |
+| `PORT` | No | API port; defaults to `5000` |
+| `NODE_ENV` | Yes | Use `production` in production |
+| `MONGODB_URI` | Yes | MongoDB connection string |
+| `JWT_SECRET` | Yes | Random secret of at least 32 characters |
+| `JWT_EXPIRES_IN` | No | Login-token lifetime; defaults to `7d` |
+| `CLIENT_URL` | Yes | Exact allowed frontend origin; comma-separated exact origins are supported |
+| `ADMIN_EMAIL` | Recommended | Startup-managed administrator email |
+| `ADMIN_PASSWORD` | Recommended | Startup-managed administrator password |
+| `SMTP_HOST` | For email reset | SMTP hostname |
+| `SMTP_PORT` | No | SMTP port; defaults to `587` |
+| `SMTP_SECURE` | No | `true` for implicit TLS |
+| `SMTP_USER` | If required | SMTP username |
+| `SMTP_PASSWORD` | If required | SMTP password |
+| `MAIL_FROM` | No | Password-reset sender identity |
+
+Production `CLIENT_URL` values must use HTTPS and exact origins. Wildcards are intentionally rejected.
+
+### Client
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `VITE_API_URL` | Yes in deployment | API base URL, normally ending in `/api` |
+
+Example:
+
+```env
+VITE_API_URL=https://your-api.onrender.com/api
 ```
 
-## Deploying to Render + Vercel
+Never commit real credentials or production `.env` files.
 
-### Backend on Render
+## Administrator accounts
 
-Deploy the `server` package as a Node web service. A Render Blueprint is included in `render.yaml`.
+Administrators use the same `users` collection as learners with `role: "admin"`. The admin UI and API remain role-gated.
 
-- Root directory: `server`
-- Build command: `npm ci`
-- Start command: `npm start`
-- Health check path: `/health`
-
-Set these Render environment variables:
+Create or update an administrator:
 
 ```bash
-NODE_ENV=production
-MONGODB_URI=<your MongoDB Atlas connection string>
-JWT_SECRET=<random 32+ character secret>
-JWT_EXPIRES_IN=7d
-CLIENT_URL=https://your-vercel-app.vercel.app
+cd server
+ADMIN_EMAIL="admin@example.com" ADMIN_PASSWORD="StrongPassword123!" npm run admin:upsert
 ```
 
-To allow another exact deployment origin, provide a comma-separated list:
+For a password that does not appear in shell history:
 
 ```bash
-CLIENT_URL=https://your-vercel-app.vercel.app,https://your-preview.vercel.app
+cd server
+read "ADMIN_EMAIL?Admin email: "
+read -s "ADMIN_PASSWORD?Admin password: "
+echo
+ADMIN_EMAIL="$ADMIN_EMAIL" ADMIN_PASSWORD="$ADMIN_PASSWORD" npm run admin:upsert
 ```
 
-Configure SMTP variables on Render if password reset emails should work in production.
+If the email exists, the command resets its password, assigns the admin role, and reactivates the account. A new email creates an additional administrator.
 
-### Frontend on Vercel
+## Available scripts
 
-Deploy the `client` folder as the Vercel project.
+Run these commands from the repository root unless noted otherwise.
 
-- Framework preset: Vite
-- Build command: `npm run build`
-- Output directory: `dist`
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start client and server in development mode |
+| `npm run install:all` | Install client and server dependencies |
+| `npm run build` | Build the production frontend |
+| `npm test` | Run the server test suite |
+| `npm run build --prefix server` | Validate the server entry point |
+| `npm run admin:upsert --prefix server` | Create or update an administrator |
+| `npm run seed --prefix server` | Rebuild development seed data |
 
-Set this Vercel environment variable:
+The seed script removes exams outside the default catalogue and updates catalogue definitions. Use it deliberately in development; do not treat it as a routine production migration.
+
+## API overview
+
+The API uses JSON and is mounted under `/api`. Protected routes require:
+
+```http
+Authorization: Bearer <token>
+```
+
+### Authentication
+
+| Method | Endpoint | Access |
+| --- | --- | --- |
+| `POST` | `/api/auth/register` | Public |
+| `POST` | `/api/auth/login` | Public |
+| `POST` | `/api/auth/forgot-password` | Public |
+| `POST` | `/api/auth/reset-password` | Public |
+| `GET` | `/api/auth/me` | Authenticated |
+| `PATCH` | `/api/auth/profile` | Authenticated |
+| `PATCH` | `/api/auth/change-password` | Authenticated |
+
+### Exams and paragraphs
+
+| Method | Endpoint | Access |
+| --- | --- | --- |
+| `GET` | `/api/exams` | Authenticated |
+| `POST` | `/api/exams/:id/launch` | Authenticated |
+| `GET` | `/api/exams/:id/random-paragraph` | Authenticated |
+| `POST` | `/api/exams/:id/start` | Authenticated; Practice continuation |
+| `POST` | `/api/exams` | Admin |
+| `PUT` | `/api/exams/:id` | Admin |
+| `DELETE` | `/api/exams/:id` | Admin |
+| `GET/POST` | `/api/paragraphs` | Admin |
+| `PUT/DELETE` | `/api/paragraphs/:id` | Admin |
+
+### Results and analytics
+
+| Method | Endpoint | Access |
+| --- | --- | --- |
+| `POST` | `/api/results` | Authenticated |
+| `GET` | `/api/results` | Authenticated owner |
+| `GET` | `/api/results/:id` | Owner or admin |
+| `GET` | `/api/analytics/summary/:userId` | Owner or admin |
+| `GET` | `/api/analytics/trend/:userId` | Owner or admin |
+| `GET` | `/api/analytics/exam-stats/:userId` | Owner or admin |
+| `GET` | `/api/analytics/mode-comparison/:userId` | Owner or admin |
+| `GET` | `/api/analytics/weekly-pattern/:userId` | Owner or admin |
+| `GET` | `/api/analytics/hourly-pattern/:userId` | Owner or admin |
+| `GET` | `/api/analytics/progress/:userId` | Owner or admin |
+| `GET` | `/api/analytics/detailed/:userId` | Owner or admin |
+
+### Administration and settings
+
+| Method | Endpoint | Access |
+| --- | --- | --- |
+| `GET` | `/api/admin/stats` | Admin |
+| `GET` | `/api/admin/users` | Admin |
+| `PATCH` | `/api/admin/users/:id/toggle` | Admin |
+| `GET/PUT` | `/api/admin/settings` | Admin |
+| `GET` | `/api/settings` | Public |
+
+## Deployment
+
+### Render API
+
+The repository includes [render.yaml](./render.yaml).
+
+1. Create a Render Blueprint or Node web service.
+2. Use `server` as the root directory.
+3. Set the production environment variables.
+4. Use `/health` as the health-check path.
+
+```text
+Build command: npm ci
+Start command: npm start
+```
+
+Render's free tier may sleep after inactivity, making the first request slower. Use an always-on plan or an external uptime monitor when predictable first-request latency is required.
+
+### Vercel client
+
+1. Import the repository into Vercel.
+2. Set the project root directory to `client`.
+3. Choose the Vite framework preset.
+4. Set `VITE_API_URL` to the deployed Render API.
+
+```text
+Build command: npm run build
+Output directory: dist
+```
+
+The included `client/vercel.json` routes client-side URLs to `index.html`.
+
+## Testing
 
 ```bash
-VITE_API_URL=https://your-render-service.onrender.com/api
+npm test
+npm run build
+npm run build --prefix server
 ```
 
-After both services are deployed, update Render's `CLIENT_URL` to the final Vercel domain and redeploy the backend.
+The server suite covers routing, CORS, catalogue assets, signed test timing, automatic exam modes, Unicode alignment, formula invariants, error classification, SSC evaluation, and comparison persistence.
 
-## Production checklist
+## Security
 
-- Set a random `JWT_SECRET` of at least 32 characters.
-- Use MongoDB Atlas or a secured replica set and restrict network access.
-- Set `CLIENT_URL` to the deployed frontend origin (comma-separated origins are supported).
-- Configure the SMTP environment variables to deliver password-reset links; tokens are never returned when `NODE_ENV=production`.
-- Serve the built frontend through a CDN and run the API behind TLS and a reverse proxy.
-- Add persistent request logging, health monitoring and database backups for the target environment.
+- Passwords are hashed with bcrypt and never returned by the API.
+- JWT secrets are validated at production startup.
+- Test timing and mode selection are signed into short-lived test tokens.
+- Result ownership is enforced server-side.
+- Admin routes require an authenticated admin role.
+- Zod validates request bodies, query strings, and identifiers.
+- CORS uses explicit origins in production.
+- Helmet, compression, request-size limits, and rate limiting are enabled.
+- Password-reset tokens are random, hashed in storage, single-use, and expire after 15 minutes.
+- Production password-reset tokens are delivered by email and are not returned in API responses.
 
-## REST API
+## Troubleshooting
 
-All endpoints are prefixed by `/api`.
+### The first production request is slow
 
-- `POST /auth/register`, `POST /auth/login`, `GET /auth/me`, `GET /auth/profile`
-- `POST /auth/forgot-password`, `POST /auth/reset-password`
-- `PATCH /auth/profile`, `PATCH /auth/change-password`
-- `GET /exams`, `GET /exams/:id/random-paragraph`
-- Admin: `POST|PUT|DELETE /exams`, CRUD `/paragraphs`
-- `POST /results`, `GET /results/:id`
-- Admin: `/admin/stats`, `/admin/users`, `/admin/settings`
+Render free services sleep after inactivity. The application already minimizes startup database work and uses a single-request actual-exam launch, but infrastructure cold starts require an always-on service or uptime monitor.
 
-Result records intentionally have no learner-facing history endpoint because the product brief excludes typing history.
-# Typing
+### The API rejects the frontend origin
+
+Set `CLIENT_URL` to the exact HTTPS frontend origin and redeploy the API:
+
+```env
+CLIENT_URL=https://your-app.vercel.app
+```
+
+For multiple exact origins, separate them with commas. Do not use wildcards in production.
+
+### Login works but pages cannot load data
+
+Confirm that the frontend variable includes the API URL:
+
+```env
+VITE_API_URL=https://your-api.onrender.com/api
+```
+
+Then rebuild and redeploy the frontend.
+
+### No paragraph is available for an exam
+
+Open Admin → Paragraphs and add a paragraph whose language matches the selected exam. Actual exams cannot launch without a matching paragraph.
+
+### Password-reset email fails
+
+Configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, and provider credentials. Verify that `MAIL_FROM` is accepted by the SMTP provider.
+
+### Health endpoint returns `503`
+
+The API process is running, but MongoDB is not connected. Check `MONGODB_URI`, Atlas network access, credentials, and server logs.
+
+---
+
+Developed for focused, accurate, exam-oriented typing practice.
