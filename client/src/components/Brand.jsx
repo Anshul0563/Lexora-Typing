@@ -1,2 +1,3 @@
 import { Keyboard } from 'lucide-react';
-export function Brand() { return <div className="brand"><span className="brand-mark"><Keyboard size={21} /></span><span>SAS Academy</span></div>; }
+import { useSiteSettings } from '../context/SiteSettingsContext.jsx';
+export function Brand() { const { settings } = useSiteSettings(); return <div className="brand"><span className="brand-mark"><Keyboard size={21} /></span><span>{settings.siteName || 'SAS Academy'}</span></div>; }
