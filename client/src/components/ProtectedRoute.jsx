@@ -6,5 +6,6 @@ export function ProtectedRoute({ admin = false }) {
   if (loading) return <Loader />;
   if (!user) return <Navigate to={admin || location.pathname.startsWith('/admin') ? '/admin/login' : '/login'} replace />;
   if (admin && user.role !== 'admin') return <Navigate to="/admin/login" replace />;
+  if (!admin && user.role === 'admin') return <Navigate to="/admin" replace />;
   return <Outlet />;
 }

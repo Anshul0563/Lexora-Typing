@@ -20,8 +20,6 @@ export function AppLayout() {
   useEffect(() => { const syncTheme = (event) => setDark(event.detail === 'dark'); window.addEventListener('typepath:theme', syncTheme); return () => window.removeEventListener('typepath:theme', syncTheme); }, []);
   const leave = () => { logout(); navigate('/'); };
 
-  if (user.role === 'admin') return <div className="app-shell"><header className="topbar"><Link to="/admin"><Brand /></Link><nav><NavLink to="/admin">Admin</NavLink><NavLink to="/profile"><UserRound size={17} /> Profile</NavLink><button className="nav-button" onClick={leave}><LogOut size={17} /> Logout</button></nav></header><main className="page-container"><Outlet /></main></div>;
-
   return <div className={`student-shell ${collapsed ? 'sidebar-collapsed' : ''}`}>
     <aside className={`student-sidebar ${menuOpen ? 'mobile-open' : ''}`}>
       <div className="sidebar-brand"><Link to="/dashboard"><Brand /></Link><button className="mobile-close" onClick={() => setMenuOpen(false)} aria-label="Close navigation"><X /></button></div>
