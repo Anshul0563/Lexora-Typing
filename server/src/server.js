@@ -2,6 +2,7 @@ import { app } from './app.js';
 import { connectDatabase, disconnectDatabase } from './config/db.js';
 import { env } from './config/env.js';
 import { ensureAdminUser } from './utils/ensureAdminUser.js';
+import { ensureDefaultCatalogue } from './utils/ensureDefaultCatalogue.js';
 import { initializeAnalyticsIndexes } from './utils/initializeIndexes.js';
 
 const DATABASE_RETRY_DELAY_MS = 10000;
@@ -17,6 +18,7 @@ async function connectToDatabase() {
       password: process.env.ADMIN_PASSWORD,
       logger: console
     });
+    await ensureDefaultCatalogue({ logger: console });
     await initializeAnalyticsIndexes();
   } catch (error) {
     console.error(`Database connection failed: ${error.message}`);
