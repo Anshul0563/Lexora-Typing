@@ -38,9 +38,9 @@ export const initializeAnalyticsIndexes = async () => {
       hourOfDay: 1
     });
 
-    console.log('✓ Analytics indexes initialized successfully');
+    console.log('Analytics indexes initialized');
   } catch (error) {
-    console.warn('⚠ Analytics indexes initialization warning:', error.message);
+    console.warn(`Analytics index initialization warning: ${error.message}`);
     // Don't throw - index creation failures shouldn't block app startup
   }
 };

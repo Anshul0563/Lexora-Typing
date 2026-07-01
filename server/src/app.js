@@ -5,6 +5,7 @@ import compression from 'compression';
 import morgan from 'morgan';
 import { rateLimit } from 'express-rate-limit';
 import { env } from './config/env.js';
+import { getDatabaseStatus } from './config/db.js';
 import { authRouter } from './routes/authRoutes.js';
 import { examRouter } from './routes/examRoutes.js';
 import { paragraphRouter } from './routes/paragraphRoutes.js';
@@ -36,9 +37,32 @@ app.use(cors({
 app.use(compression());
 app.use(express.json({ limit: '100kb' }));
 if (env.nodeEnv !== 'test') app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev'));
+
+app.get('/', (_req, res) => {
+  res.json({
+    success: true,
+    message: 'TypePath API is running successfully.',
+    status: 'online',
+    version: '1.0.0'
+  });
+});
+
+const healthCheck = (_req, res) => {
+  const database = getDatabaseStatus();
+  const isHealthy = database === 'connected';
+
+  res.status(isHealthy ? 200 : 503).json({
+    success: isHealthy,
+    status: isHealthy ? 'healthy' : 'unhealthy',
+    database,
+    server: 'running'
+  });
+};
+
+app.get('/health', healthCheck);
 app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, limit: 1000, standardHeaders: 'draft-8', legacyHeaders: false }));
 app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, limit: 100, standardHeaders: 'draft-8', legacyHeaders: false }));
-app.get('/api/health', (_req, res) => res.json({ success: true, status: 'healthy' }));
+app.get('/api/health', healthCheck);
 app.use('/api/auth', authRouter);
 app.use('/api/exams', examRouter);
 app.use('/api/paragraphs', paragraphRouter);

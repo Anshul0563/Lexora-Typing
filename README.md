@@ -48,7 +48,7 @@ Deploy the `server` package as a Node web service. A Render Blueprint is include
 - Root directory: `server`
 - Build command: `npm ci`
 - Start command: `npm start`
-- Health check path: `/api/health`
+- Health check path: `/health`
 
 Set these Render environment variables:
 
