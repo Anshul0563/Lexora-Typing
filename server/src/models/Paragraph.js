@@ -8,6 +8,8 @@ const paragraphSchema = new mongoose.Schema({
   difficulty: { type: String, enum: ['Easy', 'Medium', 'Hard'], default: 'Medium', index: true }
 }, { timestamps: true });
 
+paragraphSchema.index({ exam: 1, language: 1 });
+
 paragraphSchema.index(
   { title: 'text', content: 'text' },
   { default_language: 'none', language_override: 'searchLanguage' }

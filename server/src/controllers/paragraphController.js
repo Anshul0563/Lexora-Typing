@@ -6,6 +6,21 @@ import { signTestToken } from '../utils/jwt.js';
 import { Result } from '../models/Result.js';
 import { resolveDurationSeconds, resolveExamMode } from '../utils/examMode.js';
 
+const sampleParagraph = async (exam) => {
+  const [paragraph] = await Paragraph.aggregate([{ $match: { exam: exam._id, language: exam.language } }, { $sample: { size: 1 } }, { $project: { title: 1, content: 1, language: 1, difficulty: 1 } }]);
+  if (!paragraph) throw new AppError('No paragraph is available for this exam', 404);
+  return paragraph;
+};
+
+const createTestSession = (user, exam, paragraph, requestedMode, requestedMinutes) => {
+  const testMode = resolveExamMode(exam, requestedMode);
+  const startedAt = Date.now();
+  const durationSeconds = resolveDurationSeconds(exam, requestedMinutes);
+  const endsAt = startedAt + durationSeconds * 1000;
+  const testToken = signTestToken({ userId: user._id, examId: exam._id, paragraphId: paragraph._id, testMode, startedAt, endsAt, durationSeconds });
+  return { testToken, testMode, startedAt, endsAt, durationSeconds };
+};
+
 export const listParagraphs = asyncHandler(async (req, res) => {
   const { search, exam, language } = req.validatedQuery || {};
   const filter = {};
@@ -41,9 +56,17 @@ export const deleteParagraph = asyncHandler(async (req, res) => {
 export const randomParagraph = asyncHandler(async (req, res) => {
   const exam = await Exam.findOne({ _id: req.params.id, status: 'active' });
   if (!exam) throw new AppError('Exam is unavailable', 404);
-  const [paragraph] = await Paragraph.aggregate([{ $match: { exam: exam._id, language: exam.language } }, { $sample: { size: 1 } }, { $project: { title: 1, content: 1, language: 1, difficulty: 1 } }]);
-  if (!paragraph) throw new AppError('No paragraph is available for this exam', 404);
+  const paragraph = await sampleParagraph(exam);
   res.json({ success: true, exam, paragraph });
+});
+
+export const launchTest = asyncHandler(async (req, res) => {
+  const exam = await Exam.findOne({ _id: req.params.id, status: 'active' }).lean();
+  if (!exam) throw new AppError('Exam is unavailable', 404);
+  const paragraph = await sampleParagraph(exam);
+  if (exam.category === 'Practice') return res.json({ success: true, requiresSettings: true, exam, paragraph });
+  const session = createTestSession(req.user, exam, paragraph);
+  res.status(201).json({ success: true, requiresSettings: false, exam, paragraph, ...session });
 });
 
 export const startTest = asyncHandler(async (req, res) => {
@@ -51,10 +74,6 @@ export const startTest = asyncHandler(async (req, res) => {
   if (!exam) throw new AppError('Exam is unavailable', 404);
   const paragraph = await Paragraph.findOne({ _id: req.body.paragraphId, exam: exam._id });
   if (!paragraph) throw new AppError('Paragraph is unavailable for this exam', 404);
-  const testMode = resolveExamMode(exam, req.body.requestedMode);
-  const startedAt = Date.now();
-  const durationSeconds = resolveDurationSeconds(exam, req.body.timerMinutes);
-  const endsAt = startedAt + durationSeconds * 1000;
-  const testToken = signTestToken({ userId: req.user._id, examId: exam._id, paragraphId: paragraph._id, testMode, startedAt, endsAt, durationSeconds });
-  res.status(201).json({ success: true, testToken, testMode, startedAt, endsAt, durationSeconds });
+  const session = createTestSession(req.user, exam, paragraph, req.body.requestedMode, req.body.timerMinutes);
+  res.status(201).json({ success: true, ...session });
 });

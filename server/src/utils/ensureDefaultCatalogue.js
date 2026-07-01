@@ -8,32 +8,18 @@ const samplePassages = {
 };
 
 export async function ensureDefaultCatalogue({ logger = console } = {}) {
-  let created = 0;
-  let updated = 0;
-  let paragraphsCreated = 0;
+  const names = defaultExams.map((exam) => exam.name);
+  const catalogueWrite = await Exam.bulkWrite(defaultExams.map((exam) => ({ updateOne: { filter: { name: exam.name }, update: { $setOnInsert: exam }, upsert: true } })), { ordered: false });
 
-  for (const definition of defaultExams) {
-    const existing = await Exam.findOne({ name: definition.name });
-    const exam = existing
-      ? await Exam.findByIdAndUpdate(existing._id, definition, { new: true, runValidators: true })
-      : await Exam.create(definition);
+  const exams = await Exam.find({ name: { $in: names } }).select('_id name language').lean();
+  const examIdsWithParagraphs = new Set((await Paragraph.distinct('exam', { exam: { $in: exams.map((exam) => exam._id) } })).map(String));
+  const paragraphs = exams.filter((exam) => !examIdsWithParagraphs.has(String(exam._id))).map((exam) => ({
+    title: `${exam.name} Sample`, content: samplePassages[exam.language] || samplePassages.English,
+    language: exam.language, exam: exam._id, difficulty: 'Medium'
+  }));
+  if (paragraphs.length) await Paragraph.insertMany(paragraphs, { ordered: false });
 
-    if (existing) updated += 1;
-    else created += 1;
-
-    const hasParagraph = await Paragraph.exists({ exam: exam._id });
-    if (!hasParagraph) {
-      await Paragraph.create({
-        title: `${definition.name} Sample`,
-        content: samplePassages[definition.language] || samplePassages.English,
-        language: definition.language,
-        exam: exam._id,
-        difficulty: 'Medium'
-      });
-      paragraphsCreated += 1;
-    }
-  }
-
-  logger.info?.(`Default catalogue ensured: ${created} created, ${updated} updated, ${paragraphsCreated} sample paragraphs created.`);
-  return { created, updated, paragraphsCreated };
+  const created = catalogueWrite.upsertedCount || 0;
+  logger.info?.(`Default catalogue ensured: ${created} exams and ${paragraphs.length} sample paragraphs created.`);
+  return { created, updated: 0, paragraphsCreated: paragraphs.length };
 }

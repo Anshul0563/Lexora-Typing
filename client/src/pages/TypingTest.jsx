@@ -51,14 +51,12 @@ export default function TypingTest() {
         }
       } catch { sessionStorage.removeItem(storageKey); }
     }
-    api(`/exams/${examId}/random-paragraph`).then(async (value) => {
+    api(`/exams/${examId}/launch`, { method: 'POST', body: '{}' }).then((value) => {
       setData(value);
-      if (value.exam.category === 'Practice') { const storedTimer = Number(localStorage.getItem('typepath_timer')) || value.exam.durationMinutes; setTimerMinutes(storedTimer); setSeconds(storedTimer * 60); setPhase('practice-settings'); return; }
-      const automaticMode = value.exam.category === 'SSC' ? 'TCS' : 'NTA';
-      selectedModeRef.current = automaticMode; setSelectedMode(automaticMode); setBackspaceEnabled(true); setWordHighlight(true); setAutoScroll(true); setSoundEffects(false); setFontSize(18); setPracticeTheme('light');
-      const session = await api(`/exams/${examId}/start`, { method: 'POST', body: JSON.stringify({ paragraphId: value.paragraph._id }) });
-      const remaining = Math.max(0, session.endsAt - Date.now()); testTokenRef.current = session.testToken; endAtRef.current = session.endsAt; monotonicEndRef.current = performance.now() + remaining; selectedModeRef.current = session.testMode; setSelectedMode(session.testMode); activeRef.current = true; setSeconds(Math.ceil(remaining / 1000)); setPhase('active');
-      sessionStorage.setItem(storageKey, JSON.stringify({ data: value, typed: '', endAt: session.endsAt, testToken: session.testToken, totalKeystrokes: 0, backspaceCount: 0, selectedMode: session.testMode, backspaceEnabled: true, wordHighlight: true }));
+      if (value.requiresSettings) { const storedTimer = Number(localStorage.getItem('typepath_timer')) || value.exam.durationMinutes; setTimerMinutes(storedTimer); setSeconds(storedTimer * 60); setPhase('practice-settings'); return; }
+      selectedModeRef.current = value.testMode; setSelectedMode(value.testMode); setBackspaceEnabled(true); setWordHighlight(true); setAutoScroll(true); setSoundEffects(false); setFontSize(18); setPracticeTheme('light');
+      const remaining = Math.max(0, value.endsAt - Date.now()); testTokenRef.current = value.testToken; endAtRef.current = value.endsAt; monotonicEndRef.current = performance.now() + remaining; activeRef.current = true; setSeconds(Math.ceil(remaining / 1000)); setPhase('active');
+      sessionStorage.setItem(storageKey, JSON.stringify({ data: value, typed: '', endAt: value.endsAt, testToken: value.testToken, totalKeystrokes: 0, backspaceCount: 0, selectedMode: value.testMode, backspaceEnabled: true, wordHighlight: true }));
     }).catch((e) => { setError(e.message); setPhase('error'); });
   }, [examId, storageKey]);
 
