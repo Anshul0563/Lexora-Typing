@@ -6,7 +6,7 @@ export function GlobalLoader() {
   const [visible, setVisible] = useState(false);
   useEffect(() => {
     if (!pending) { setVisible(false); return undefined; }
-    const timer = window.setTimeout(() => setVisible(true), 140);
+    const timer = window.setTimeout(() => setVisible(true), 350);
     return () => window.clearTimeout(timer);
   }, [pending]);
   if (!visible || !pending) return null;
