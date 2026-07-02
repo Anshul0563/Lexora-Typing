@@ -174,6 +174,18 @@ test('comparison realigns after single, multiple and long word omissions', () =>
   }
 });
 
+test('LCS anchors preserve every match after an omitted middle word', () => {
+  const result = classifyErrors('The quick brown fox jumps over the lazy dog', 'The quick fox jumps over the lazy dog');
+  assert.equal(result.counts.omission, 1);
+  assert.equal(result.counts.spelling, 0);
+  assert.equal(result.counts.substitution, 0);
+  assert.equal(result.referenceReviewParts.some((part) => part.category === 'omission' && part.text.includes('brown')), true);
+  assert.equal(result.referenceReviewParts.at(-1).severity, 'correct');
+  assert.equal(result.referenceReviewParts.at(-1).text.includes('fox jumps over the lazy dog'), true);
+  assert.equal(result.typedReviewParts.at(-1).severity, 'correct');
+  assert.equal(result.typedReviewParts.at(-1).text.includes('fox jumps over the lazy dog'), true);
+});
+
 test('later matching sequences outrank locally similar substitutions', () => {
   const source = 'Public service requires patience, accuracy and a strong sense of responsibility.\nA candidate preparing for a competitive examination...';
   const typed = 'Public service requires patience accuracy and a strong sense of responsibility a candidate';

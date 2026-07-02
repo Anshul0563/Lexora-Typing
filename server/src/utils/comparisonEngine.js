@@ -23,7 +23,7 @@ function tokenize(value) {
 function longestCommonWordAnchors(source, typed) {
   const width = typed.length + 1;
   const directions = new Uint8Array((source.length + 1) * width);
-  let previous = new Uint16Array(width);
+  let twoBack = new Uint16Array(width); let previous = new Uint16Array(width);
   for (let i = 1; i <= source.length; i += 1) {
     const current = new Uint16Array(width);
     for (let j = 1; j <= typed.length; j += 1) {
@@ -32,13 +32,16 @@ function longestCommonWordAnchors(source, typed) {
       if (matches) { current[j] = previous[j - 1] + 1; directions[index] = 1; }
       else if (previous[j] >= current[j - 1]) { current[j] = previous[j]; directions[index] = 2; }
       else { current[j] = current[j - 1]; directions[index] = 3; }
+      const transposed = i > 1 && j > 1 && source[i - 2].canonical && source[i - 2].canonical === typed[j - 1].canonical && source[i - 1].canonical === typed[j - 2].canonical;
+      if (transposed && twoBack[j - 2] + 2 >= current[j]) { current[j] = twoBack[j - 2] + 2; directions[index] = 4; }
     }
-    previous = current;
+    twoBack = previous; previous = current;
   }
   const anchors = []; let i = source.length; let j = typed.length;
   while (i && j) {
     const direction = directions[i * width + j];
     if (direction === 1) { anchors.push({ sourceIndex: --i, typedIndex: --j }); }
+    else if (direction === 4) { anchors.push({ sourceIndex: i - 2, typedIndex: j - 2, transposition: true }); i -= 2; j -= 2; }
     else if (direction === 2) i -= 1;
     else j -= 1;
   }
@@ -160,8 +163,13 @@ export function compareTexts(sourceValue, typedValue, allErrorsAreFull = false) 
   let sourceCursor = 0; let typedCursor = 0;
   for (const anchor of [...anchors, { sourceIndex: source.words.length, typedIndex: typed.words.length, terminal: true }]) {
     resolveRegion(source.words.slice(sourceCursor, anchor.sourceIndex), typed.words.slice(typedCursor, anchor.typedIndex));
-    if (!anchor.terminal) pair(source.words[anchor.sourceIndex], typed.words[anchor.typedIndex]);
-    sourceCursor = anchor.sourceIndex + 1; typedCursor = anchor.typedIndex + 1;
+    if (anchor.transposition) {
+      record('transposition', source.words.slice(anchor.sourceIndex, anchor.sourceIndex + 2).map((word) => word.separator + word.text).join(''), typed.words.slice(anchor.typedIndex, anchor.typedIndex + 2).map((word) => word.separator + word.text).join(''));
+      sourceCursor = anchor.sourceIndex + 2; typedCursor = anchor.typedIndex + 2;
+    } else {
+      if (!anchor.terminal) pair(source.words[anchor.sourceIndex], typed.words[anchor.typedIndex]);
+      sourceCursor = anchor.sourceIndex + 1; typedCursor = anchor.typedIndex + 1;
+    }
   }
   compareSeparators(source.trailing, typed.trailing);
   const halfErrors = allErrorsAreFull ? 0 : [...HALF_CATEGORIES].reduce((sum, category) => sum + counts[category], 0);
