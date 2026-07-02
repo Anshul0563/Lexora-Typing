@@ -103,6 +103,12 @@ export default function TypingTest() {
   useEffect(() => { if (phase === 'active') inputRef.current?.focus({ preventScroll: true }); }, [phase]);
   useEffect(() => {
     if (phase !== 'active') return undefined;
+    const warnBeforeLeaving = (event) => { event.preventDefault(); event.returnValue = ''; };
+    window.addEventListener('beforeunload', warnBeforeLeaving);
+    return () => window.removeEventListener('beforeunload', warnBeforeLeaving);
+  }, [phase]);
+  useEffect(() => {
+    if (phase !== 'active') return undefined;
     document.documentElement.style.setProperty('--typing-font-size', `${fontSize}px`);
     if (data?.exam?.category === 'Practice') document.documentElement.dataset.practiceTheme = practiceTheme;
     return () => { delete document.documentElement.dataset.practiceTheme; document.documentElement.style.removeProperty('--typing-font-size'); };

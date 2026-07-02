@@ -95,7 +95,7 @@ export const getPerformanceTrend = asyncHandler(async (req, res) => {
     {
       $group: {
         _id: {
-          $dateToString: { format: '%Y-%m-%d', date: '$createdAt' }
+          $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: 'Asia/Kolkata' }
         },
         avgWpm: { $avg: '$netWpm' },
         avgAccuracy: { $avg: '$accuracy' },
@@ -214,7 +214,7 @@ export const getWeeklyPattern = asyncHandler(async (req, res) => {
     },
     {
       $group: {
-        _id: '$dayOfWeek',
+        _id: { $dayOfWeek: { date: '$createdAt', timezone: 'Asia/Kolkata' } },
         testCount: { $sum: 1 },
         avgWpm: { $avg: '$netWpm' },
         avgAccuracy: { $avg: '$accuracy' }
@@ -223,7 +223,7 @@ export const getWeeklyPattern = asyncHandler(async (req, res) => {
     { $sort: { _id: 1 } },
     {
       $project: {
-        day: { $arrayElemAt: [dayNames, '$_id'] },
+        day: { $arrayElemAt: [dayNames, { $subtract: ['$_id', 1] }] },
         testCount: 1,
         avgWpm: { $round: ['$avgWpm', 2] },
         avgAccuracy: { $round: ['$avgAccuracy', 2] },
@@ -250,7 +250,7 @@ export const getHourlyPattern = asyncHandler(async (req, res) => {
     },
     {
       $group: {
-        _id: '$hourOfDay',
+        _id: { $hour: { date: '$createdAt', timezone: 'Asia/Kolkata' } },
         testCount: { $sum: 1 },
         avgWpm: { $avg: '$netWpm' },
         avgAccuracy: { $avg: '$accuracy' }

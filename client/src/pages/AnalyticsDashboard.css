@@ -378,7 +378,7 @@
   font-weight: 600;
 }
 
-.badge {
+.analytics-dashboard .badge {
   display: inline-block;
   background: rgba(99, 102, 241, 0.2);
   color: var(--brand);
@@ -449,8 +449,8 @@
     flex-direction: column;
   }
 
-  .filter-select,
-  .button {
+  .analytics-dashboard .filter-select,
+  .analytics-dashboard .button {
     width: 100%;
   }
 }

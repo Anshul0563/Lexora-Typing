@@ -12,6 +12,7 @@ import { QuickAction } from '../components/dashboard/QuickAction.jsx';
 export default function Dashboard() {
   const { user } = useAuth(); const navigate = useNavigate(); const [exams, setExams] = useState([]); const [summary, setSummary] = useState({ totalTests: 0, bestWpm: 0, averageAccuracy: 0 }); const [recent, setRecent] = useState([]); const [error, setError] = useState(''); const [loading, setLoading] = useState(true);
   useEffect(() => { Promise.all([api('/exams'), api('/results')]).then(([examData, resultData]) => { setExams(examData.exams); setSummary(resultData.summary); setRecent(resultData.results.slice(0, 3)); }).catch((e) => setError(e.message)).finally(() => setLoading(false)); }, []);
+  useEffect(() => { if (!loading && window.location.hash === '#exams') requestAnimationFrame(() => document.getElementById('exams')?.scrollIntoView({ behavior: 'smooth' })); }, [loading]);
   const practices = useMemo(() => ({ english: exams.find((item) => item.name === 'English Typing Practice') || exams.find((item) => item.language === 'English'), hindi: exams.find((item) => item.name === 'Hindi Typing Practice') || exams.find((item) => item.language === 'Hindi') }), [exams]);
   const featuredExams = useMemo(() => exams.slice(0, 6), [exams]);
   if (loading) return <Loader label="Preparing your dashboard…" />;

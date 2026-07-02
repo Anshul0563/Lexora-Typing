@@ -8,7 +8,15 @@ export function Modal({ title, children, onClose }) {
   closeRef.current = onClose;
   useEffect(() => {
     const previous = document.activeElement;
-    const onKeyDown = (event) => { if (event.key === 'Escape') closeRef.current(); };
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') { closeRef.current(); return; }
+      if (event.key !== 'Tab' || !dialogRef.current) return;
+      const focusable = [...dialogRef.current.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])')];
+      if (!focusable.length) return;
+      const first = focusable[0]; const last = focusable.at(-1);
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
     document.addEventListener('keydown', onKeyDown);
     requestAnimationFrame(() => dialogRef.current?.querySelector('input, select, textarea, button')?.focus());
     return () => { document.removeEventListener('keydown', onKeyDown); previous?.focus?.(); };
