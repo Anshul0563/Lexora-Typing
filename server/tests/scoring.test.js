@@ -144,6 +144,19 @@ test('every configured half-error category receives exactly half weight in non-s
   }
 });
 
+test('typed review exposes visible markers for half errors missing from typed input', () => {
+  const punctuation = classifyErrors('Hello, world', 'Hello world');
+  const punctuationMarker = punctuation.typedReviewParts.find((part) => part.missing);
+  assert.equal(punctuationMarker.text, ',');
+  assert.equal(punctuationMarker.category, 'punctuation');
+  assert.equal(punctuationMarker.severity, 'half');
+
+  const spacing = classifyErrors('one two', 'onetwo');
+  const spacingMarker = spacing.typedReviewParts.find((part) => part.missing);
+  assert.equal(spacingMarker.text, '␠');
+  assert.equal(spacingMarker.category, 'spacing');
+});
+
 test('classifies incomplete prefixes, repeated words and multi-word omissions precisely', () => {
   const incompletePrefix = classifyErrors('typing', 'yping');
   assert.equal(incompletePrefix.counts.incompleteWord, 1);

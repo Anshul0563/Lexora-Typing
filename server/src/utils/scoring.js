@@ -144,9 +144,21 @@ export function classifyErrors(sourceValue, typedValue, allErrorsAreFull = false
     else parts.push({ text, severity: item.severity, category: item.category });
     return parts;
   }, []);
+  const typedReviewParts = classified.reduce((parts, item) => {
+    if (item.typed) {
+      const previousPart = parts.at(-1);
+      if (!previousPart?.missing && previousPart?.severity === item.severity && previousPart?.category === item.category) previousPart.text += item.typed;
+      else parts.push({ text: item.typed, severity: item.severity, category: item.category });
+      return parts;
+    }
+    if (item.severity !== 'half') return parts;
+    const marker = item.category === 'spacing' ? '␠' : item.category === 'paragraphic' ? '↵' : item.source;
+    if (marker) parts.push({ text: marker, severity: 'half', category: item.category, missing: true });
+    return parts;
+  }, []);
   const halfErrors = allErrorsAreFull ? 0 : counts.spacing + counts.capitalization + counts.punctuation + counts.transposition + counts.paragraphic;
   const classifiedTotal = Object.values(counts).reduce((sum, value) => sum + value, 0);
-  return { counts, fullErrors: classifiedTotal - halfErrors, halfErrors, weightedErrors: classifiedTotal - halfErrors * 0.5, referenceParts: merge('source'), typedParts: merge('typed') };
+  return { counts, fullErrors: classifiedTotal - halfErrors, halfErrors, weightedErrors: classifiedTotal - halfErrors * 0.5, referenceParts: merge('source'), typedParts: merge('typed'), typedReviewParts };
 }
 
 function alignWithinBand(target, input, band) {
@@ -244,7 +256,7 @@ export function calculateResult(source, typed, elapsedSeconds, telemetry = {}, s
     ...wordAlignment,
     errorUnits: round(errorUnits), scoringMode, errorPenalty, evaluationMode,
     fullErrors: errors.fullErrors, halfErrors: errors.halfErrors, weightedErrors: errors.weightedErrors,
-    errorBreakdown: errors.counts, comparison: { referenceParts: errors.referenceParts, typedParts: errors.typedParts },
+    errorBreakdown: errors.counts, comparison: { referenceParts: errors.referenceParts, typedParts: errors.typedParts, typedReviewParts: errors.typedReviewParts },
     totalKeystrokes,
     backspaceCount,
     timeTaken: round(safeSeconds)
