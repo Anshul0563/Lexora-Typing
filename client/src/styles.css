@@ -89,6 +89,18 @@
 .student-workspace { min-height:100vh;display:flex;flex-direction:column; }
 .student-main { flex:1; }
 .site-footer-workspace { background:var(--student-surface);border-color:var(--student-border);color:var(--student-muted); }
+.site-footer-admin {
+  background: #fff;
+  border-color: #e1e6ed;
+}
+.site-footer-admin .site-footer-inner {
+  max-width: none;
+  padding: 0 34px 18px;
+}
+.site-footer-admin .site-footer-bottom {
+  margin-top: 0;
+  padding-top: 17px;
+}
 @media (max-width:620px) {
   .site-footer-inner { padding:30px 18px 18px; }
   .site-footer-main { grid-template-columns:1fr 1fr;gap:28px 20px; }
