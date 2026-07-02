@@ -3,7 +3,7 @@ import { Paragraph } from '../models/Paragraph.js';
 import { Exam } from '../models/Exam.js';
 import { AppError } from '../utils/AppError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { calculateResult, classifyErrors } from '../utils/scoring.js';
+import { calculateResult } from '../utils/scoring.js';
 import { verifyTestToken } from '../utils/jwt.js';
 import { calculateElapsedSeconds } from '../utils/testTiming.js';
 import { resolveEvaluationMode } from '../utils/examMode.js';
@@ -22,9 +22,16 @@ const scoringRuleForMode = (exam, testMode) => ({
 
 const withSynchronizedComparison = (result) => {
   const value = typeof result?.toObject === 'function' ? result.toObject() : result;
-  if (!value?.paragraph?.content || value.comparison?.referenceReviewParts) return value;
-  const review = classifyErrors(value.paragraph.content, value.typedText || '', value.evaluationMode === 'ssc-stenographer');
-  return { ...value, comparison: { ...(value.comparison || {}), referenceReviewParts: review.referenceReviewParts, typedReviewParts: review.typedReviewParts } };
+  if (!value?.paragraph?.content) return value;
+  const recalculated = calculateResult(value.paragraph.content, value.typedText || '', value.timeTaken, {
+    totalKeystrokes: value.totalKeystrokes,
+    backspaceCount: value.backspaceCount
+  }, {
+    mode: value.scoringMode,
+    errorPenalty: value.errorPenalty,
+    evaluationMode: value.evaluationMode
+  });
+  return { ...value, ...recalculated };
 };
 
 export const submitResult = asyncHandler(async (req, res) => {
