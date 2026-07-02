@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { AlertCircle, Clock3, Keyboard, RotateCcw, ShieldCheck } from 'lucide-react';
+import { AlertCircle, Clock3, Maximize2, Minimize2, Minus, Plus, RotateCcw } from 'lucide-react';
 import { api } from '../services/api.js';
 import { Brand } from '../components/Brand.jsx';
 import { Button } from '../components/Button.jsx';
@@ -19,6 +19,10 @@ function TestPreference({ label, enabled, onChange, disabled }) {
   return <label className={`test-preference ${enabled ? 'is-on' : ''}`}><span>{label}</span><button type="button" role="switch" aria-checked={enabled} disabled={disabled} onClick={() => onChange(!enabled)}><i /></button><small>{enabled ? 'ON' : 'OFF'}</small></label>;
 }
 
+function TestToolbar({ fontSize, onDecrease, onIncrease, fullscreen, onFullscreen, onReset, disabled }) {
+  return <div className="test-toolbar" aria-label="Typing display controls"><div className="font-controls"><button type="button" onClick={onDecrease} disabled={fontSize <= 14 || disabled} aria-label="Decrease text size" title="Decrease text size"><Minus /></button><span aria-live="polite">{fontSize}px</span><button type="button" onClick={onIncrease} disabled={fontSize >= 30 || disabled} aria-label="Increase text size" title="Increase text size"><Plus /></button></div><button type="button" onClick={onFullscreen} aria-label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'} title={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}>{fullscreen ? <Minimize2 /> : <Maximize2 />}<span>{fullscreen ? 'Exit' : 'Fullscreen'}</span></button><button type="button" className="reset-test" onClick={onReset} disabled={disabled} title="Reset test"><RotateCcw /><span>Reset</span></button></div>;
+}
+
 export default function TypingTest() {
   const { examId } = useParams(); const navigate = useNavigate(); const storageKey = `typepath_test_${examId}`;
   const inputRef = useRef(null); const referenceRef = useRef(null); const currentWordRef = useRef(null); const submittingRef = useRef(false); const activeRef = useRef(false); const typedRef = useRef(''); const endAtRef = useRef(0); const monotonicEndRef = useRef(0); const testTokenRef = useRef(''); const keystrokesRef = useRef(0); const backspacesRef = useRef(0); const selectedModeRef = useRef('Custom');
@@ -30,6 +34,7 @@ export default function TypingTest() {
   const [autoScroll, setAutoScroll] = useState(() => localStorage.getItem('typepath_auto_scroll') !== 'false');
   const [fontSize, setFontSize] = useState(() => Number(localStorage.getItem('typepath_font_size')) || 18);
   const [practiceTheme, setPracticeTheme] = useState(() => localStorage.getItem('typepath_practice_theme') || 'light');
+  const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement));
 
   const chooseMode = (mode) => { selectedModeRef.current = mode; setSelectedMode(mode); if (mode !== 'Custom') { setBackspaceEnabled(true); setWordHighlight(true); setAutoScroll(true); setSoundEffects(false); setFontSize(18); setPracticeTheme('light'); } };
   const playTone = useCallback(() => { if (!soundEffects) return; const AudioContext = window.AudioContext || window.webkitAudioContext; if (!AudioContext) return; const context = new AudioContext(); const oscillator = context.createOscillator(); const gain = context.createGain(); oscillator.frequency.value = 660; gain.gain.value = 0.035; oscillator.connect(gain); gain.connect(context.destination); oscillator.start(); oscillator.stop(context.currentTime + 0.08); oscillator.addEventListener('ended', () => context.close()); }, [soundEffects]);
@@ -89,11 +94,12 @@ export default function TypingTest() {
 
   useEffect(() => { if (phase === 'active') inputRef.current?.focus({ preventScroll: true }); }, [phase]);
   useEffect(() => {
-    if (data?.exam?.category !== 'Practice' || phase !== 'active') return undefined;
-    document.documentElement.dataset.practiceTheme = practiceTheme;
-    document.documentElement.style.setProperty('--practice-font-size', `${fontSize}px`);
-    return () => { delete document.documentElement.dataset.practiceTheme; document.documentElement.style.removeProperty('--practice-font-size'); };
+    if (phase !== 'active') return undefined;
+    document.documentElement.style.setProperty('--typing-font-size', `${fontSize}px`);
+    if (data?.exam?.category === 'Practice') document.documentElement.dataset.practiceTheme = practiceTheme;
+    return () => { delete document.documentElement.dataset.practiceTheme; document.documentElement.style.removeProperty('--typing-font-size'); };
   }, [data, fontSize, phase, practiceTheme]);
+  useEffect(() => { const syncFullscreen = () => setIsFullscreen(Boolean(document.fullscreenElement)); document.addEventListener('fullscreenchange', syncFullscreen); return () => document.removeEventListener('fullscreenchange', syncFullscreen); }, []);
   useEffect(() => { if (phase === 'active') persistSession(); }, [phase, typed, persistSession]);
   useEffect(() => {
     if (!wordHighlight || !autoScroll || phase !== 'active' || !currentWordRef.current || !referenceRef.current) return;
@@ -116,6 +122,8 @@ export default function TypingTest() {
       const remaining = Math.max(0, session.endsAt - Date.now()); typedRef.current = ''; keystrokesRef.current = 0; backspacesRef.current = 0; testTokenRef.current = session.testToken; endAtRef.current = session.endsAt; monotonicEndRef.current = performance.now() + remaining; selectedModeRef.current = session.testMode; setSelectedMode(session.testMode); activeRef.current = true; setTyped(''); setSeconds(Math.ceil(remaining / 1000)); setPhase('active'); persistSession({ typed: '', selectedMode: session.testMode, endAt: session.endsAt, testToken: session.testToken, totalKeystrokes: 0, backspaceCount: 0 });
     } catch (e) { setError(e.message); setPhase('ended'); }
   };
+  const changeFontSize = (amount) => setFontSize((value) => Math.min(30, Math.max(14, value + amount)));
+  const toggleFullscreen = async () => { try { if (document.fullscreenElement) await document.exitFullscreen(); else await document.documentElement.requestFullscreen(); inputRef.current?.focus({ preventScroll: true }); } catch { setError('Fullscreen is not available in this browser.'); } };
   const keepCaretAtEnd = () => {
     const input = inputRef.current; if (!input || !activeRef.current) return; const end = input.value.length; if (input.selectionStart !== end || input.selectionEnd !== end) input.setSelectionRange(end, end);
   };
