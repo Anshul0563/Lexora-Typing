@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bot, CheckCircle2, Download, Github, HardDrive, RefreshCw, ShieldCheck, Smartphone } from 'lucide-react';
+import { CheckCircle2, Download, Github, HardDrive, RefreshCw, ShieldCheck, Smartphone } from 'lucide-react';
 import { Brand } from '../components/Brand.jsx';
 import { Footer } from '../components/Footer.jsx';
 import { useSiteSettings } from '../context/SiteSettingsContext.jsx';
@@ -9,6 +9,12 @@ const REPOSITORY = 'Anshul0563/Typing-Desktop';
 const RELEASE_API = `https://api.github.com/repos/${REPOSITORY}/releases/latest`;
 const RELEASES_URL = `https://github.com/${REPOSITORY}/releases`;
 const formatSize = (bytes) => bytes ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : 'Size unavailable';
+const AndroidLogo = () => <svg viewBox="0 0 64 64" role="img" aria-label="Android logo">
+  <g fill="currentColor">
+    <path d="M19.2 18.1 14.8 10.5a1.5 1.5 0 0 1 2.6-1.5l4.5 7.8A23.2 23.2 0 0 1 32 14.5c3.6 0 7.1.8 10.1 2.3L46.6 9a1.5 1.5 0 1 1 2.6 1.5l-4.4 7.6A18.3 18.3 0 0 1 51 31H13a18.3 18.3 0 0 1 6.2-12.9ZM23 25a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm18 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
+    <path d="M13 34h38v15a5 5 0 0 1-5 5h-2v6a3 3 0 0 1-6 0v-6H26v6a3 3 0 0 1-6 0v-6h-2a5 5 0 0 1-5-5V34ZM6 37a4 4 0 0 1 8 0v12a4 4 0 0 1-8 0V37Zm44 0a4 4 0 0 1 8 0v12a4 4 0 0 1-8 0V37Z"/>
+  </g>
+</svg>;
 
 export default function WindowsDownload() {
   const { settings } = useSiteSettings();
@@ -67,7 +73,7 @@ export default function WindowsDownload() {
       </section>
 
       <section className="download-card download-card-android">
-        <div className="download-android-icon"><Bot /></div>
+        <div className="download-android-icon"><AndroidLogo /></div>
         <div className="download-release-info">
           <small>Android app</small>
           <h2>Coming soon</h2>
