@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, Download, Github, HardDrive, RefreshCw, ShieldCheck, Smartphone } from 'lucide-react';
+import { Bot, CheckCircle2, Download, Github, HardDrive, RefreshCw, ShieldCheck, Smartphone } from 'lucide-react';
 import { Brand } from '../components/Brand.jsx';
 import { Footer } from '../components/Footer.jsx';
 import { useSiteSettings } from '../context/SiteSettingsContext.jsx';
@@ -67,7 +67,7 @@ export default function WindowsDownload() {
       </section>
 
       <section className="download-card download-card-android">
-        <div className="download-android-icon"><Smartphone /></div>
+        <div className="download-android-icon"><Bot /></div>
         <div className="download-release-info">
           <small>Android app</small>
           <h2>Coming soon</h2>
