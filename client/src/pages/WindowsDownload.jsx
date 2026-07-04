@@ -10,10 +10,10 @@ const RELEASE_API = `https://api.github.com/repos/${REPOSITORY}/releases/latest`
 const RELEASES_URL = `https://github.com/${REPOSITORY}/releases`;
 const formatSize = (bytes) => bytes ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : 'Size unavailable';
 const AndroidLogo = () => <svg viewBox="0 0 64 64" role="img" aria-label="Android logo">
-  <g fill="currentColor">
-    <path d="M19.2 18.1 14.8 10.5a1.5 1.5 0 0 1 2.6-1.5l4.5 7.8A23.2 23.2 0 0 1 32 14.5c3.6 0 7.1.8 10.1 2.3L46.6 9a1.5 1.5 0 1 1 2.6 1.5l-4.4 7.6A18.3 18.3 0 0 1 51 31H13a18.3 18.3 0 0 1 6.2-12.9ZM23 25a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm18 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
-    <path d="M13 34h38v15a5 5 0 0 1-5 5h-2v6a3 3 0 0 1-6 0v-6H26v6a3 3 0 0 1-6 0v-6h-2a5 5 0 0 1-5-5V34ZM6 37a4 4 0 0 1 8 0v12a4 4 0 0 1-8 0V37Zm44 0a4 4 0 0 1 8 0v12a4 4 0 0 1-8 0V37Z"/>
-  </g>
+  <path d="M20.5 20 15 10.5M43.5 20l5.5-9.5" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+  <path d="M10 47C10 30.4 19.8 20 32 20s22 10.4 22 27H10Z" fill="currentColor" />
+  <circle cx="23" cy="35" r="2.6" fill="white" />
+  <circle cx="41" cy="35" r="2.6" fill="white" />
 </svg>;
 
 export default function WindowsDownload() {
