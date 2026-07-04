@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, Download, Github, HardDrive, RefreshCw, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, Download, Github, HardDrive, RefreshCw, ShieldCheck, Smartphone } from 'lucide-react';
 import { Brand } from '../components/Brand.jsx';
 import { Footer } from '../components/Footer.jsx';
 import { useSiteSettings } from '../context/SiteSettingsContext.jsx';
@@ -48,12 +48,12 @@ export default function WindowsDownload() {
     <header className="public-nav"><Link to="/" aria-label={`${settings.siteName} home`}><Brand /></Link><div><Link className="text-link" to="/login">Log in</Link><Link className="button button-primary" to="/register">Create account</Link></div></header>
     <main className="download-main">
       <section className="download-hero">
-        <span><Download />Windows desktop app</span>
-        <h1>Practise with {settings.siteName} on Windows.</h1>
-        <p>Download the newest installer directly from our official GitHub release. The version shown here updates automatically whenever a new release is published.</p>
+        <span><Download />Apps</span>
+        <h1>Take {settings.siteName} with you.</h1>
+        <p>Download the latest Windows app today. Our Android app is on the way and will be available here soon.</p>
       </section>
 
-      <section className="download-card">
+      <section className="download-card download-card-windows">
         <div className="download-app-icon"><span></span><span></span><span></span><span></span></div>
         <div className="download-release-info">
           <small>Latest Windows release</small>
@@ -63,6 +63,17 @@ export default function WindowsDownload() {
           {status === 'loading' && <div className="download-loading"><RefreshCw />Finding the latest version…</div>}
           {status === 'missing-exe' && <><p>The latest release does not contain a Windows `.exe` file yet.</p><a className="button button-secondary" href={release.html_url || RELEASES_URL} target="_blank" rel="noopener noreferrer"><Github />View GitHub release</a></>}
           {status === 'unavailable' && <><p>No public release is available right now. Publish a GitHub Release with an `.exe` asset and it will appear here automatically.</p><button className="button button-secondary" onClick={() => loadRelease()}><RefreshCw />Check again</button></>}
+        </div>
+      </section>
+
+      <section className="download-card download-card-android">
+        <div className="download-android-icon"><Smartphone /></div>
+        <div className="download-release-info">
+          <small>Android app</small>
+          <h2>Coming soon</h2>
+          <p>We’re building the {settings.siteName} experience for Android. The app will be available to download here when it is ready.</p>
+          <div className="download-meta"><span>Android</span><span>In development</span></div>
+          <button className="button button-secondary download-button" type="button" disabled><Smartphone />Coming soon</button>
         </div>
       </section>
 
