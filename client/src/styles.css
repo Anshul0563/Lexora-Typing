@@ -500,8 +500,8 @@ button {
   width: 38px;
   height: 38px;
   flex: 0 0 38px;
-  border-radius: 10px;
-  background: var(--ink);
+  border-radius: 50%;
+  background: #050505;
   color: white;
   display: grid;
   place-items: center;
@@ -512,7 +512,7 @@ button {
   width: 100%;
   height: 100%;
   max-width: 100%;
-  object-fit: contain;
+  object-fit: cover;
 }
 .global-loader-mark {
   position: relative;
@@ -1705,7 +1705,7 @@ button {
     width: 32px;
     height: 32px;
     flex-basis: 32px;
-    border-radius: 8px;
+    border-radius: 50%;
   }
   .public-nav > div .button {
     padding-inline: 10px;
@@ -3775,9 +3775,7 @@ button {
   justify-content: space-between;
   padding: 0 9px 29px;
 }
-.admin-sidebar .brand-mark {
-  background: #2f65df;
-}
+.admin-sidebar .brand-mark { background: #050505; }
 .admin-sidebar-brand > button {
   display: none;
   border: 0;

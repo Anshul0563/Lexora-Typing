@@ -12,7 +12,7 @@ adminRouter.get('/stats', stats);
 adminRouter.get('/users', validate(adminUsersSchema), users);
 adminRouter.patch('/users/:id/toggle', validate(idSchema), toggleUser);
 adminRouter.get('/settings', asyncHandler(async (_req, res) => {
-  const settings = await Setting.findOne() || await Setting.create({});
+  const settings = await Setting.findOneAndUpdate({ siteName: 'SAS Academy' }, { siteName: 'Lexora' }, { new: true }) || await Setting.findOne() || await Setting.create({});
   res.json({ success: true, settings });
 }));
 adminRouter.put('/settings', validate(settingsSchema), asyncHandler(async (req, res) => {

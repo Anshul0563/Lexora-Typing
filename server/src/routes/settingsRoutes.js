@@ -5,7 +5,9 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 export const settingsRouter = Router();
 
 settingsRouter.get('/', asyncHandler(async (_req, res) => {
-  const settings = await Setting.findOne() || await Setting.create({});
+  // Carry the previous default brand forward for existing installations without
+  // changing any administrator-selected custom name.
+  const settings = await Setting.findOneAndUpdate({ siteName: 'SAS Academy' }, { siteName: 'Lexora' }, { new: true }) || await Setting.findOne() || await Setting.create({});
   res.json({
     success: true,
     settings: {

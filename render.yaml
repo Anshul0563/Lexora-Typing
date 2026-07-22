@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: sas-academy-api
+    name: lexora-api
     runtime: node
     rootDir: server
     plan: free
@@ -31,4 +31,4 @@ services:
       - key: SMTP_PASSWORD
         sync: false
       - key: MAIL_FROM
-        value: "SAS Academy <no-reply@example.com>"
+        value: "Lexora <no-reply@example.com>"

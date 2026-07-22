@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const settingSchema = new mongoose.Schema({
-  siteName: { type: String, default: 'SAS Academy', trim: true, maxlength: 60 },
+  siteName: { type: String, default: 'Lexora', trim: true, maxlength: 60 },
   supportEmail: { type: String, default: '', trim: true },
   contactPhone: { type: String, default: '', trim: true, maxlength: 20 },
   addressUrl: { type: String, default: '', trim: true, maxlength: 300 },

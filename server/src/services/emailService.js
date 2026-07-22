@@ -28,11 +28,11 @@ export async function sendPasswordResetEmail(user, token) {
   const safeName = escapeHtml(user.name);
   const safeResetUrl = escapeHtml(resetUrl);
   await transport.sendMail({
-    from: process.env.MAIL_FROM || 'SAS Academy <no-reply@example.com>',
+    from: process.env.MAIL_FROM || 'Lexora <no-reply@example.com>',
     to: user.email,
-    subject: 'Reset your SAS Academy password',
+    subject: 'Reset your Lexora password',
     text: `Hello ${user.name},\n\nReset your password using this secure link (valid for 15 minutes):\n${resetUrl}\n\nIf you did not request this, you can ignore this email.`,
-    html: `<p>Hello ${safeName},</p><p>Use the link below to reset your SAS Academy password. It is valid for 15 minutes.</p><p><a href="${safeResetUrl}">Reset password</a></p><p>If you did not request this, you can ignore this email.</p>`
+    html: `<p>Hello ${safeName},</p><p>Use the link below to reset your Lexora password. It is valid for 15 minutes.</p><p><a href="${safeResetUrl}">Reset password</a></p><p>If you did not request this, you can ignore this email.</p>`
   });
   return true;
 }

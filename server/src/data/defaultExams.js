@@ -62,6 +62,6 @@ export const defaultExams = [
   exam('Bihar SSC Stenographer', 'Bihar Staff Selection Commission', 'State Exams', 'bihar-ssc', { description: 'Typing practice for Bihar SSC stenographer candidates.' }),
   exam('Haryana CET Clerk', 'Haryana Staff Selection Commission', 'State Exams', 'haryana-ssc', { description: 'Typing practice for Haryana CET Clerk candidates.' }),
 
-  exam('English Typing Practice', 'SAS Academy', 'Practice', 'practice', { duration: 5, paragraphLength: 180, description: 'Short English typing practice for daily speed and accuracy improvement.' }),
-  exam('Hindi Typing Practice', 'SAS Academy', 'Practice', 'practice', { language: 'Hindi', duration: 5, paragraphLength: 160, description: 'Short Hindi typing practice for daily speed and accuracy improvement.' })
+  exam('English Typing Practice', 'Lexora', 'Practice', 'practice', { duration: 5, paragraphLength: 180, description: 'Short English typing practice for daily speed and accuracy improvement.' }),
+  exam('Hindi Typing Practice', 'Lexora', 'Practice', 'practice', { language: 'Hindi', duration: 5, paragraphLength: 160, description: 'Short Hindi typing practice for daily speed and accuracy improvement.' })
 ];

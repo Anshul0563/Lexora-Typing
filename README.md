@@ -1,6 +1,6 @@
-# SAS Academy Typing Platform
+# Lexora Typing Platform
 
-A full-stack typing practice and examination platform for competitive-exam preparation. SAS Academy provides server-authoritative scoring, automatic exam-mode selection, character-accurate result analysis, performance analytics, and a complete administration workspace.
+A full-stack typing practice and examination platform for competitive-exam preparation. Lexora provides server-authoritative scoring, automatic exam-mode selection, character-accurate result analysis, performance analytics, and a complete administration workspace.
 
 Built with React, Express, MongoDB, and Node.js.
 
